@@ -113,14 +113,14 @@ plans. :ref:`Chapters 9 <large-scale-testing>` and :ref:`10
 Baseline Architecture
 =====================
 
-This chapter describes the most important aspects of the LSST baseline database
-architecture. The choice of the architecture is driven by the project
-requirements (see chapter 4) as well as cost, availability and maturity of the
-off-the-shelf solutions currently available on the market (see
-:ref:`potential-solutions`), and design trade-offs (see
-:ref:`design-trade-offs`). The architecture is periodically revisited: we
-continuously monitor all relevant technologies, and accordingly fine-tune the
-baseline architecture.
+This chapter describes the most important aspects of the LSST baseline
+database architecture. The choice of the architecture is driven by the
+project requirements (see :ref:`reqs`) as well as cost, availability
+and maturity of the off-the-shelf solutions currently available on the
+market (see :ref:`potential-solutions`), and design trade-offs (see
+:ref:`design-trade-offs`). The architecture is periodically
+revisited: we continuously monitor all relevant technologies, and
+accordingly fine-tune the baseline architecture.
 
 In summary, the LSST baseline architecture for Alert Production is an
 off-the-shelf RDBMS system which uses replication for fault tolerance
@@ -133,11 +133,12 @@ recovering from hardware failures without disrupting running queries.
 All large catalogs are spatially partitioned into materialized *chunks*,
 and the remaining catalogs are replicated on each server; the chunks are
 distributed across all nodes. The Object catalog is further partitioned
-into *sub-chunks* with overlaps, [#]_ materialized on-the-fly when needed.
+into *sub-chunks* with overlaps,\ [#]_ materialized on-the-fly when needed.
 Shared scans are used to answer all but low-volume user queries. Details
 follow below.
 
-.. [#] A chunk's overlap is implicitly contained within the overlaps of its edge sub-chunks.
+.. [#] A chunk's overlap is implicitly contained within the overlaps of
+   its edge sub-chunks.
 
 .. _alert-production:
 
@@ -163,17 +164,17 @@ provenance.
 
 .. table:: The estimated row counts for the 3 largest catalogs in the first and last data releases are shown below (all numbers in billions of rows).
 
-   +---------------------------------+-------------------------+-------------------+
-   | Catalog                         | 1:sup:`st` Data Release | Last Data Release |
-   +=================================+=========================+===================+
-   | DiaObject (unique count)        | 0.8                     | 15                |
-   +---------------------------------+-------------------------+-------------------+
-   | DiaObject (actual in the table) | 15                      | 44                |
-   +---------------------------------+-------------------------+-------------------+
-   | DiaSource                       | 23                      | 45                |
-   +---------------------------------+-------------------------+-------------------+
-   | DiaForcedSource                 | 15                      | 301               |
-   +---------------------------------+-------------------------+-------------------+
+   +---------------------------------+---------------------------+-------------------+
+   | Catalog                         | 1\ :sup:`st` Data Release | Last Data Release |
+   +=================================+===========================+===================+
+   | DiaObject (unique count)        | 0.8                       | 15                |
+   +---------------------------------+---------------------------+-------------------+
+   | DiaObject (actual in the table) | 15                        | 44                |
+   +---------------------------------+---------------------------+-------------------+
+   | DiaSource                       | 23                        | 45                |
+   +---------------------------------+---------------------------+-------------------+
+   | DiaForcedSource                 | 15                        | 301               |
+   +---------------------------------+---------------------------+-------------------+
 
 These catalogs will be modified live every night. After Data Release
 Production has been run based on the first six months of data and each
@@ -286,7 +287,7 @@ expect to maintain a separate replica just for user queries,
 synchronized in real time using one-way master-slave native database
 replication. The catalogs for user queries will be structured
 identically to the live catalogs, and views will be used to hide the
-splits (using a “UNION ALL”).
+splits (using a “``UNION ALL``”).
 
 For additional safety, we might choose to replicate the small
 current-night tables, all DiaObject partitions, and the remaining
@@ -325,9 +326,7 @@ Production, we will need to satisfy many user queries involving such
 scans on a daily basis. User query access is therefore the primary
 driver of our scalable database architecture, which is described in
 detail below. For a description of the data loading process, please see
-section 8.15.2.
-
-.. FIXME
+:ref:`qserve-data-loading`.
 
 .. _user-query-access:
 
@@ -560,7 +559,7 @@ where :math:`k` is the number of objects in a partition.
 
 In consideration of these trade-offs, two-level partitioning seems to be
 a conceptually simple way to blend the advantages of both extremes.
-Queries can be fragmented in terms of coarse partitions (”chunks”), and
+Queries can be fragmented in terms of coarse partitions (“chunks”), and
 spatial near-neighbor joins can be executed over more fine partitions
 (“sub-chunks”) within each partition. To avoid the overhead of the
 sub-chunks for non-join queries, the system can store chunks and
@@ -694,11 +693,11 @@ and network bandwidth and I/O analyses, see [1].
    | DiaForcedSource     | ~13           | ~300                 | 8           | Specialized analysis of faint diaObjects and detections      |
    +---------------------+---------------+----------------------+-------------+--------------------------------------------------------------+
 
-***Reliability***. The system must not lose data, and it must provide at
+**Reliability**. The system must not lose data, and it must provide at
 least 98% up time in the face of hardware failures, software failures,
 system maintenance, and upgrades.
 
-***Low cost***. It is essential to not overrun the allocated budget,
+**Low cost**. It is essential to not overrun the allocated budget,
 thus a cost-effective, preferably open-source solution is strongly
 preferred.
 
@@ -1010,7 +1009,7 @@ solutions.
 The remaining of this chapter discusses lessons learned to-date, along
 with a description of relevant tests we have run.
 
-.._mapreduce-nosql:
+.. _mapreduce-nosql:
 
 Map/Reduce-based and NoSQL Solutions
 ------------------------------------
@@ -1078,9 +1077,7 @@ The remaining of this section discusses all of the above-mentioned
 products.
 
 Further details about individual MR and no-SQL solutions can be found in
-Appendix A and B.
-
-.. FIXME link to appendix
+:ref:`mr-solutions` and :ref:`db-solutions`.
 
 .. _dbms-solutions:
 
@@ -1091,9 +1088,8 @@ Database systems have been around for much longer than MR, and therefore
 they are much more mature. They can be divided into many types:
 parallel/single node, relational/object-oriented, columnar/row-based;
 some are built as appliances. Details about individual DBMS products and
-solutions we considered and/or evaluated can be found in Appendix B.
-
-.. FIXME link to appendix
+solutions we considered and/or evaluated can be found in
+:ref:`db-solutions`.
 
 .. _parallel-dbms:
 
@@ -1286,7 +1282,7 @@ edition.
 
 With help from Calpont, we evaluated InfiniDB and demonstrated it could
 be used for the LSST system – we run the most complex (near neighbor)
-query. Details are available in Appendix C.
+query. Details are available in :ref:`infinidb-tests`.
 
 We are working closely with the MonetDB team, including the main
 architect of the system, Martin Kersten and two of his students who
@@ -1518,8 +1514,9 @@ The MR community has recognized that their system lacks built-in
 operators. Although nearly anything can be implemented in successive MR
 stages, there may be more efficient methods, and those methods do not
 need to be reinvented constantly. MR developers have also explored the
-addition of indexes, schemas, and other database-ish features.[#]_ Some
-have even built a complete relational database system[#]_ on top of MR.
+addition of indexes, schemas, and other database-ish features.\ [#]_
+Some have even built a complete relational database system\ [#]_ on top
+of MR.
 
 .. [#] An example of that is `Hive <http://hadoop.apache.org/hive>`_
 
@@ -1532,7 +1529,7 @@ The database community has benefited from MR's experience in two ways:
    execution plans for certain types of queries. Though systems such as
    Teradata or IBM's DB2 Parallel Edition have long supported this, a
    number of other vendors are building new shared-nothing-type
-   systems.[#]_ It is worth noting that these databases typically use
+   systems.\ [#]_ It is worth noting that these databases typically use
    MR-style execution for aggregation queries.
 
 2. Databases such as Greenplum (part of EMC) and Aster Data (part of
@@ -1637,7 +1634,7 @@ disk-based tables. We also tested the influence of introducing
 “skinny” tables, as well as running sub-partitioning in a client C++
 program, and inside a stored procedure. These tests are described at
 http://dev.lsstcorp.org/trac/wiki/db/SubPartOverhead. The on-the-fly
-overhead was measured to be 18% for ``select \*`` queries, but
+overhead was measured to be 18% for ``select *`` queries, but
 3600% if only one column (the skinniest selection) was needed.
 
 .. _avoiding-materializing-sub-partitions:
@@ -1706,7 +1703,7 @@ To determine performance of full table scan, we measured:
 
 2. speed of ``select count(\*) from XX where muRA = 4.3`` using a 1
    billion row table. There was no index on muRA, so this forced a full
-   table scan. Note that we did not do ``SELECT \*`` to avoid measuring
+   table scan. Note that we did not do ``SELECT *`` to avoid measuring
    speed of converting attributes. The scan of 72,117,127,716 bytes took
    28:49.82 sec, which is 39.8 MB/sec.
 
@@ -1808,7 +1805,7 @@ association, DC3 is demonstrating catalog construction and DC4 will
 demonstrate the end user query/L3 data production.
 
 In addition to DC-related tests, we are running standalone tests,
-described in details in chapter 9
+described in detail in :ref:`large-scale-testing`.
 
 .. _dc1:
 
@@ -1865,7 +1862,7 @@ production showed it was the right decision, e.g., the database
 performance did not cause any problems. The test is documented at
 https://dev.lsstcorp.org/trac/wiki/db/tests/ForcedPhoto.
 
-.. _winter2014-partitioning:
+.. _winter2013-partitioning:
 
 Winter-2013 Data Challenge: partitioning 2.6 TB table for Qserv
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1882,10 +1879,13 @@ tables; RefMatch objects and sources have to be partitioned in a unique
 way to ensure they join properly with the corresponding Object and
 Source tables.
 
-    *Winter-2013 Data Challenge: multi-billion-row table*
+.. _winter2014-multi-billion-row:
+
+Winter-2013 Data Challenge: multi-billion-row table
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The early Winter 2013 production resulted in 2.6 TB database; the
-largest table, ForcedSource, had nearly 4 billion rows.[#]_
+largest table, ForcedSource, had nearly 4 billion rows.\ [#]_
 Dealing with multi-billion row table is non-trivial are requires special
 handling and optimizations. Some operations, such as building an index
 tend to take a long time (tens of hours), and a single ill-tuned
@@ -1895,16 +1895,20 @@ we had to rebuild indexes after inserting data from each batch. Key
 lessons learned have been documented at
 https://dev.lsstcorp.org/trac/wiki/mysqlLargeTables. Issues we uncovered
 with MySQL (myisamchk) had been reported to the MySQL developers, and
-were fixed immediately fixed.
-
-.. [#] It is worth noting that in real production we do not anticipate to manage billion+ rows in a *single physical table* - the Qserv system that we are developing will split every large table into smaller, manageable pieces.
+were fixed immediately fixed.  
 
 In addition, some of the more complex queries, in particular these with
-spatial constraints had to be optimized\ :sup:`8`. The query
+spatial constraints had to be optimized.\ [#]_ The query
 optimizations have been documented at
 https://dev.lsstcorp.org/trac/wiki/db/MySQL/Optimizations.
 
-.. [#] Some of these optimizations will not be required when we use Qserv, as Qserv will apply them internally.
+.. [#] It is worth noting that in real production we do not anticipate
+   to manage billion+ rows in a *single physical table* - the Qserv system
+   that we are developing will split every large table into smaller,
+   manageable pieces.
+
+.. [#] Some of these optimizations will not be required when we use
+   Qserv, as Qserv will apply them internally.
 
 .. _risk-analysis:
 
@@ -1938,9 +1942,9 @@ production today. For example, eBay manages a 10+ petabyte production
 database[21] and expects to deploy a 36 petabyte system later in 2011.
 For comparison, the largest single LSST data set, including all indexes
 and overheads is expected to be below 10 petabytes in size, and will be
-produced ~20 years from now (the last Data Release).[#]_ The eBay system
-is based on an expensive commercial DBMS (Teradata), but there is a
-growing demand for large scale systems and growing competition in that
+produced ~20 years from now (the last Data Release).\ [#]_ The eBay
+system is based on an expensive commercial DBMS (Teradata), but there is
+a growing demand for large scale systems and growing competition in that
 area (Hadoop, SciDB, Greenplum, InfiniDB, MonetDB, Caché and others).
 
 .. [#] The numbers, both for eBay and LSST are for compressed data sets.
@@ -1959,11 +1963,9 @@ sufficiently supported in the long-term. Since the purchase, several
 independent forks of MySQL software have emerged, including MariaDB
 (supported by one of the MySQL founders), Drizzle (supported by key
 architects of MySQL), and Percona. Should MySQL disappear, these
-open-source, MySQL-compatible[#]_ systems are a solid alternative.
+open-source, MySQL-compatible\ [#]_ systems are a solid alternative.
 Should we need to migrate to a different DBMS, we have taken multiple
 measures to minimize the impact:
-
-.. [#] With the exception of Drizzle, which introduced major changes to the architecture.
 
 - our schema does not contain any MySQL-specific elements and we have
   successfully demonstrating using it in other systems such as MonetDB
@@ -1977,6 +1979,9 @@ measures to minimize the impact:
   tend to be DBMS-specific, and instead use user defined functions,
   which are easier to port (only the interface binding part needs to be
   migrated).
+
+.. [#] With the exception of Drizzle, which introduced major
+   changes to the architecture.
 
 **Complex data analysis**. The most complex analysis we identified so
 far include spatial and temporal correlations which exhibit
@@ -2358,7 +2363,7 @@ chunk, the worker allows as many of them to run as there are CPU cores
 in the system, but if it has many queries that involve different chunk
 tables, it allows fewer simultaneous chunk queries in order to ensure
 that only one table scan per disk spindle occurs. Further discussion of
-this "shared scanning" feature is described in Section 8.10.
+this "shared scanning" feature is described in :ref:`shared-scans`.
 
 .. _threading-model:
 
@@ -2740,9 +2745,7 @@ these represents all (or a large fraction of) the work for a single user
 query, and the impact is amortized among all disks on all workers.
 
 For discussion about the performance of the existing prototype, refer to
-chapter 10.1.
-
-.. FIXME add link
+:ref:`demo-shared-scans`.
 
 .. _shared-scan-multiple-tables:
 
@@ -2764,7 +2767,9 @@ average scan latencies as follows:
 A dedicated queue (and consequently, in-memory space for corresponding
 chunks) will be managed for each scan.
 
-.. [#] This includes all ``Object``-related tables, e.g., ``Object_Extra``, ``Object_Periodic``, ``Object_NonPeriodic``, ``Object_APMean``
+.. [#] This includes all ``Object``-related tables, e.g.,
+   ``Object_Extra``, ``Object_Periodic``, ``Object_NonPeriodic``,
+   ``Object_APMean``
 
 .. _l3:
 
@@ -2799,7 +2804,7 @@ and executing queries on their local data.
 
 Cluster management performed outside of XRootD does not directly affect
 query execution, but include coordinating data distribution, loading,
-nodes joining/leaving and is discussed in section 8.15 Administration.
+nodes joining/leaving and is discussed in :ref:`qserve-admin`.
 
 .. _fault-tolerance:
 
@@ -3286,7 +3291,7 @@ performance gains. Caching results for future queries is another example
 of performance optimization that can yield significant speed
 improvements.
 
-**Partitioning granularity varying per table*.** Since large tables in
+**Partitioning granularity varying per table**. Since large tables in
 LSST vary significantly in row count and row size, it may be worthwhile
 to support partitioning with multiple granularities. For execution
 management it is useful to have partitions sized so that query fragments
@@ -3339,10 +3344,11 @@ production system will be composed of few hundred database servers [33],
 so a realistic test should include a cluster of at least 100 nodes.
 
 Total database size of a single data release will vary from ~1.3 PB
-(DR1) to ~15 PB (DR11).[#]_ Realistic testing requires at least ~20-30
+(DR1) to ~15 PB (DR11).\ [#]_ Realistic testing requires at least ~20-30
 TB of storage (across all nodes).
 
-.. [#] These numbers are for single copy, data and indices, compressed when appropriate.
+.. [#] These numbers are for single copy, data and indices,
+   compressed when appropriate.
 
 Note that *a lot* of highly focused tests which are extremely useful to
 fine tune different aspects of the system can be done on a very small,
@@ -3462,13 +3468,14 @@ Data
 
 We tested using a dataset synthesized by spatially replicating the
 dataset from the LSST data challenge (“PT1.1”). We used two tables:
-Object and Source.[#]_ These two tables are among the largest expected
+Object and Source.\ [#]_ These two tables are among the largest expected
 in LSST. Of these two, the Object table is expected to be the most
 frequently used. The Source table will have 50-200X the rows of the
 Object table, and its use is primarily confined to time series analyses
 that generally involve joins with the Object table.
 
-.. [#] The schema may be browsed online at http://lsst1.ncsa.uiuc.edu/schema/index.php?sVer=PT1_1
+.. [#] The schema may be browsed online at
+   http://lsst1.ncsa.uiuc.edu/schema/index.php?sVer=PT1_1
 
 The PT1.1 dataset covers a spherical patch with right-ascension between
 358˚ and 5˚ and declination between -7˚ and
@@ -3477,16 +3484,17 @@ replicated over the sky by transforming duplicate rows' RA and
 declination columns, taking care to maintain spatial distance and
 density by a non-linear transformation of right-ascension as a function
 of declination. This resulted in an Object table of 1.7 billion rows
-(2TB) and a Source table of 55 billion rows (30 TB).[#]_ The Source table
-included only data between -54:sup:`o` and +54\ :sup:`o` in declination.
+(2TB) and a Source table of 55 billion rows (30 TB).\ [#]_ The Source table
+included only data between -54˚ and +54˚ in declination.
 The polar portions were clipped due to limited disk space on the test
 cluster. Partitioning was set for 85 stripes each with 12 sub-stripes
-giving a φ height of ~2.11\ :sup:`o` for stripes and 0.176\ :sup:`o` for
+giving a φ height of ~2.11˚ for stripes and 0.176˚ for
 sub-stripes. Each chunk thus spanned an area of approximately
 4.5deg\ :sup:`2`, and each sub-chunk, 0.031deg\ :sup:`2`. This yielded
-8,983 chunks. Overlap was set to 0.01667\ :sup:`o` (1 arc-minute).
+8,983 chunks. Overlap was set to 0.01667˚ (1 arc-minute).
 
-.. [#] Source for the duplicator is available at http://dev.lsstcorp.org/trac/browser/DMS/qserv/master/trunk/examples
+.. [#] Source for the duplicator is available at
+   http://dev.lsstcorp.org/trac/browser/DMS/qserv/master/trunk/examples
 
 .. _test-150-node-queries:
 
@@ -3603,7 +3611,7 @@ High-volume 2 – full-sky filter
    WHERE fluxToAbMag(iFlux_PS) - fluxToAbMag(zFlux_PS) > 4
 
 Using the on-disk data footprint (MySQL's MyISAM .MYD, without indexes
-or metadata) of the Object table (1.824x10:sup:`12` bytes), we can
+or metadata) of the Object table (1.824x10\ :sup:`12` bytes), we can
 compute the aggregate effective table scanning bandwidth. Run 3's 7
 minute execution yields 4.0GB/s in aggregate, or 27MB/s per node, while
 the other runs yield approximately 11GB/s in aggregate, or 76MB/s per
@@ -3628,21 +3636,22 @@ High-volume 3 – density
    FROM Object
    GROUP BY chunkId
 
-This query computes statistics for table fragments (which are roughly
-equal in spatial area), giving a rough estimate of object density over
-the sky. It illustrates more complex aggregation query support in Qserv.
-This query is of similar complexity to High Volume 2, but Figure 6
-illustrates measured times significantly faster, which is probably due
-to reduced results transmission time. As mentioned for HV2, cache
-behavior was not controlled, but the 4 minute time in Run 3 may be
-close.
-
 .. _fig-150-node-high-volume-density:
 
 .. figure:: _static/150_node_high_volume_density.png
    :alt: High-volume full-sky filter.
 
    High volume full-sky filter.
+
+This query computes statistics for table fragments (which are roughly
+equal in spatial area), giving a rough estimate of object density over
+the sky. It illustrates more complex aggregation query support in Qserv.
+This query is of similar complexity to High Volume 2, but
+:numref:`fig-150-node-high-volume-density`
+illustrates measured times significantly faster, which is probably due
+to reduced results transmission time. As mentioned for HV2, cache
+behavior was not controlled, but the 4 minute time in Run 3 may be
+close.
 
 Super-high-volume 1 – near neighbor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -4159,7 +4168,7 @@ Low volume – small area search
 
    SELECT count(*)
    FROM Object
-   WHERE qserv_areaspec\_box(1,3,2,4) AND
+   WHERE qserv_areaspec_box(1,3,2,4) AND
          scisql_fluxToAbMag(zFlux_PS) BETWEEN 21 AND 21.5
 
 This average query response time was 1.3 sec. This is roughly the
@@ -4220,7 +4229,7 @@ High volume – full Object scans
 This query was repeated with different constants in the filtering
 condition, and the execution time did not vary significantly – it
 returned in an average time of 8.45 sec – or less than 1 second longer
-than the condition-less COUNT(*) query.
+than the condition-less ``COUNT(*)`` query.
 
 .. code:: sql
 
@@ -4358,7 +4367,7 @@ Other Demonstrations
 
 .. _demo-shared-scans:
 
-Shares Scans
+Shared Scans
 ------------
 
 We have conducted preliminary empirical evaluation of our basic shared
@@ -5184,7 +5193,7 @@ through commercial, non-free edition, and is closed source.
 We are in contact with Jim Tommaney, CTO of the Calpont Corporation
 since April 2008. In late 2010 we run the most demanding query – the
 near neighbor tests using Calpont. Details of these tests are covered in
-Appendix C.
+:ref:`infinidb-tests`.
 
 .. _luciddb:
 
@@ -5661,7 +5670,7 @@ of near neighbors.
 
    .. code:: sql
 
-      and (( o1.ra\_d2 <> o2.ra\_d2 ) or (o1.decl\_d2 <> o2.decl\_d2))
+      and (( o1.ra_d2 <> o2.ra_d2 ) or (o1.decl_d2 <> o2.decl_d2))
 
 3. There is the additional condition where a given pair of neighbors
    span both Grid D and Grid R. For this subset of the data, the
@@ -5810,8 +5819,6 @@ microseconds will run significantly slower with InfiniDB.
    
    Query OK, 0 rows affected (0.00 sec)
 
-.. code:: text
-
    mysql> . near_neighbors.sql
    
    +----------+------------------------+--------------------------+
@@ -5872,11 +5879,9 @@ microseconds will run significantly slower with InfiniDB.
 
 .. code:: text
 
-   mysql> set @ra\_limit:= 0.5;
+   mysql> set @ra_limit:= 0.5;
 
    Query OK, 0 rows affected (0.00 sec)
-
-.. code:: text
 
    mysql> . near_neighbors.sql
 
