@@ -366,7 +366,12 @@ with no (or with minimal) disruption. However, to achieve fault
 tolerance and provide recover mechanisms, appropriate smarts have to be
 build into the node management software.
 
-.. FIXME figure here
+.. _fig-shared-nothing-arch:
+
+.. figure:: _static/shared_nothing_arch.jpg
+   :alt: Shared-nothing architecture diagram.
+
+   Shared-nothing database architecture.
 
 .. _user-query-indexing:
 
@@ -627,9 +632,12 @@ additions.
 
 .. FIXME footnote
 
-.. FIXME figure
+.. _fig-qserve-components:
 
-Figure 1: Component connections in Qserv
+.. figure:: _static/qserve_components.png
+   :alt: Component connections in Qserv
+
+   Component connections in Qserv.
 
 .. _reqs:
 
@@ -2115,6 +2123,13 @@ The Qserv master dispatches work as an XRootD client to workers by
 writing to partition-addressed XRootD paths and reads results from
 hash-addressed XRootD paths.
 
+.. _fig-xrootd:
+
+.. figure:: _static/xrootd.png
+   :alt: XRootD
+
+   XRootD.
+
 .. _partitioning:
 
 Partitioning
@@ -2207,7 +2222,12 @@ cluster. These include:
 Processing module overview
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. FIXME add figure
+.. _fig-processing-modules:
+
+.. figure:: _static/processing_modules.png
+   :alt: Processing modules.
+
+   Processing modules.
 
 This figure illustrates the query preparation pipeline that generates
 physical queries from an input query string. User query strings are
@@ -3488,19 +3508,23 @@ Low-volume 1 – object retrieval
 
    SELECT * FROM Object WHERE objectId = <objId>
 
-.. FIXME Figure 1
+In :numref:`fig-150-node-low-vol-object-retrieval` we can see that
+performance of this query is roughly constant, taking about 4 seconds.
+Each run consisted of 20 queries. The slower performance of Runs 1 and
+4, where each execution took 9 seconds, were probably the result of
+competing tasks in the cluster. We attribute the initial 8 second
+execution time in Run 5 and beyond to cold cache conditions (likely the
+objectId index) in the cluster.
 
-In Figure 1 we can see that performance of this query is roughly
-constant, taking about 4 seconds. Each run consisted of 20 queries. The
-slower performance of Runs 1 and 4, where each execution took 9 seconds,
-were probably the result of competing tasks in the cluster. We attribute
-the initial 8 second execution time in Run 5 and beyond to cold cache
-conditions (likely the objectId index) in the cluster.
+.. _fig-150-node-low-vol-object-retrieval:
+
+.. figure:: _static/150_node_low_vol_object_retrieval.png
+   :alt: Low-volume object retrival.
+
+   Low-volume object retrival.
 
 Low-volume 2 – time series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. FIXME *Figure 2*
 
 .. code:: sql
 
@@ -3514,9 +3538,17 @@ on a desired object. For testing, the objectId was randomized as for the
 Low Volume 1 query, which meant that null results were retrieved where
 the Source data was missing due to available space on the test cluster.
 
-In Figure 2 we see that performance is roughly constant at about 4
-seconds per query. Run 1 was done after Low Volume 1's Run 1 and we
-discount its 9 second execution times similarly as anomalous.
+In :numref:`fig-low-volume-time-series` we see that performance is roughly
+constant at about 4 seconds per query. Run 1 was done after Low Volume
+1's Run 1 and we discount its 9 second execution times similarly as
+anomalous.
+
+.. _fig-low-volume-time-series:
+
+.. figure:: _static/low_volume_time_series.png
+   :alt: Low-volume time series.
+
+   Low-volume time series.
 
 Low-volume 3 – spatially-restricted filter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3531,15 +3563,20 @@ Low-volume 3 – spatially-restricted filter
    AND fluxToAbMag(gFlux_PS)-fluxToAbMag(rFlux_PS)
 
    BETWEEN 0.3 AND 0.4
-   AND fluxToAbMag(iFlux\_PS)-fluxToAbMag(zFlux_PS)
+   AND fluxToAbMag(iFlux_PS)-fluxToAbMag(zFlux_PS)
    BETWEEN 0.1 AND 0.12;
 
-.. FIXME Figure 3
-
-In Figure 3 we see the same 4 second performance that was seen for the
+In :numref:`fig-low-volume-spatial-filter` we see the same 4 second performance that was seen for the
 other low volume queries. Again, the ~9 second performance in Run 2
 could not be reproduced so we discount it as resulting from competing
 processes on the cluster.
+
+.. _fig-low-volume-spatial-filter:
+
+.. figure:: _static/low_volume_spatial_filter.png
+   :alt: Low-volume spatially-restricted filter.
+
+   Low-volume spatially-restricted filter.
 
 High volume 1 – count
 ^^^^^^^^^^^^^^^^^^^^^
@@ -3548,7 +3585,12 @@ High volume 1 – count
 
    SELECT COUNT(*) FROM Object
 
-.. FIXME Figure 4
+.. _fig-150-node-high-volume-count:
+
+.. figure:: _static/150_node_high_volume_count.png
+   :alt: High-volume count.
+
+   High volume count.
 
 High-volume 2 – full-sky filter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3560,8 +3602,6 @@ High-volume 2 – full-sky filter
    FROM Object
    WHERE fluxToAbMag(iFlux_PS) - fluxToAbMag(zFlux_PS) > 4
 
-.. FIXME Figure 5
-
 Using the on-disk data footprint (MySQL's MyISAM .MYD, without indexes
 or metadata) of the Object table (1.824x10:sup:`12` bytes), we can
 compute the aggregate effective table scanning bandwidth. Run 3's 7
@@ -3572,14 +3612,19 @@ parallel, Run 3's bandwidth is more realistic, given seek activity from
 competing queries and the disk manufacturer's reported theoretical
 transfer rate of 98MB/s.
 
+.. _fig-150-node-high-volume-full-sky:
+
+.. figure:: _static/150_node_high_volume_full_sky.png
+   :alt: High-volume full-sky filter.
+
+   High volume full-sky filter.
+
 High-volume 3 – density
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. FIXME Figure 6
-
 .. code:: sql
 
-   SELECT COUNT(*) AS n, AVG(ra\_PS), AVG(decl_PS), chunkId
+   SELECT COUNT(*) AS n, AVG(ra_PS), AVG(decl_PS), chunkId
    FROM Object
    GROUP BY chunkId
 
@@ -3591,6 +3636,13 @@ illustrates measured times significantly faster, which is probably due
 to reduced results transmission time. As mentioned for HV2, cache
 behavior was not controlled, but the 4 minute time in Run 3 may be
 close.
+
+.. _fig-150-node-high-volume-density:
+
+.. figure:: _static/150_node_high_volume_density.png
+   :alt: High-volume full-sky filter.
+
+   High volume full-sky filter.
 
 Super-high-volume 1 – near neighbor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3643,34 +3695,50 @@ data size proportionally without changing the data size per node
 (200-300GB). We measured performance at 40, 100, and 150 nodes to
 demonstrate weak scaling.
 
-.. FIXME Figure 8
-
-.. *Figure 7*
-
-.. **Figure 9**
-
-
 Scaling with small queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-From Figure 7, 8, and 9, we see that execution time is unaffected by
-node count given that the data per node is constant. The spike in the
-40-node configuration in Figure 8 is caused by 2 slow queries (23s and
-57s); the other 28 executed in times ranging from 4.09 to 4.11 seconds.
+From :numref:`fig-150-node-scaling-small-1` —
+:numref:`fig-150-node-scaling-small-3`, we see that execution time is
+unaffected by node count given that the data per node is constant. The
+spike in the 40-node configuration in
+:numref:`fig-150-node-scaling-small-3` is caused by 2 slow queries (23s
+and 57s); the other 28 executed in times ranging from 4.09 to 4.11
+seconds.
+
+.. _fig-150-node-scaling-small-1:
+
+.. figure:: _static/150_node_scaling_small_1.png
+   :alt: Scaling with node count (1).
+
+   Scaling with node count (1).
+
+.. _fig-150-node-scaling-small-2:
+
+.. figure:: _static/150_node_scaling_small_2.png
+   :alt: Scaling with node count (2).
+
+   Scaling with node count (2).
+
+.. _fig-150-node-scaling-small-3:
+
+.. figure:: _static/150_node_scaling_small_3.png
+   :alt: Scaling with node count (3).
+
+   Scaling with node count (3).
 
 Scaling with expensive queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **High Volume**
 
-.. FIXME Figure 10
-
 If Qserv scaled perfectly linearly, the execution time should be
-constant when the data per node is constant. In Figure 10 the times for
-high volume queries show a slight increase. HV1 is a primarily a test of
-dispatch and result collection overhead and its time increases linearly
-with the number of chunks since the front-end has a fixed amount of work
-to do per chunk. Since we varied the set of chunks in order to vary the
+constant when the data per node is constant. In
+:numref:`fig-150-node-scaling-high-volume` the times for high volume
+queries show a slight increase. HV1 is a primarily a test of dispatch
+and result collection overhead and its time increases linearly with the
+number of chunks since the front-end has a fixed amount of work to do
+per chunk. Since we varied the set of chunks in order to vary the
 cluster size, the execution time of HV1 should thus vary linearly with
 cluster size. HV3 seems to have a similar trend since due to cache
 effects – its result was cached so execution became more dominated by
@@ -3682,7 +3750,12 @@ results, but they did not dominate. If the query results were perfectly
 cached, we expect the overall execution time to be dominated by overhead
 as in HV1, and this is clearly not the case.
 
-.. FIXME Figure 11
+.. _fig-150-node-scaling-high-volume:
+
+.. figure:: _static/150_node_scaling_high_volume.png
+   :alt: Scaling with high volume queries.
+
+   Scaling with high volume queries.
 
 **Super High Volume**
 
@@ -3693,12 +3766,24 @@ for both SHV1 and SHV2. Our time-limited access to the cluster did not
 allow us to repeat executions of these expensive queries and study their
 performance in better detail.
 
+.. _fig-150-node-scaling-super-high-volume:
+
+.. figure:: _static/150_node_super_high_volume.png
+   :alt: Scaling with super high volume queries.
+
+   Scaling with super high volume queries.
+
 .. _test-150-node-concurrency:
 
 Concurrency
 ~~~~~~~~~~~
 
-.. FIXME Figure 12
+.. _fig-node-concurrency:
+
+.. figure:: _static/150_node_concurrency.png
+   :alt: Concurrency test.
+
+   Concurrency test.
 
 We were able to test Qserv with multiple queries in flight. We ran 4
 “streams” of queries: two parallel invocations of HV2, one of LV1, and
@@ -4195,32 +4280,51 @@ We run a subset of the above queries on different number nodes (50, 100,
 250, 200, 250, 300), in “week scaling” configuration, to determine how
 our software scales.
 
-.. FIXME Figure 13 (dispatch overhead) Figure 14 (simple object selection)
+.. _fig-in2p3-dispatch-overhead:
 
-.. FIXME Figure 15 (select from a mid-size area)
+.. figure:: _static/in2p3_dispatch_overhead.png
+   :alt: Dispatch overhead.
+
+   Dispatch overhead.
+
+.. _fig-in2p3-simple-object-selection:
+
+.. figure:: _static/in2p3_simple_object_selection.png
+   :alt: Simple object selection.
+
+   Simple object selection.
+
+.. _fig-in2p3-mid-size-area:
+
+.. figure:: _static/in2p3_mid_size_area.png
+   :alt: Select from a mid-size area.
+
+   Select from a mid-size area.
 
 .. _in2p3-test-discussion:
 
 Discussion
 ~~~~~~~~~~
 
-We showed linear scalability of the dispatch – see Figure 13, achieving
-below 10 sec (12 for Source catalog) times when run on the entire, 300
-node cluster. Queries that touch all chunks on all clusters are required
-to complete under an hour, so 10-12 sec overhead is very low. During
-previous large scale tests we run on 150 nodes 2 years ago, we were
-getting ~4 sec overhead. During this test, we measured 3.3 sec on
-150-node configuration, which indicates we reduced the overhead, however
-since hardware used for these two tests was not the same, direct
-comparison would not be entirely fair.
+We showed linear scalability of the dispatch – see
+:numref:`fig-in2p3-dispatch-overhead`, achieving below 10 sec (12 for
+Source catalog) times when run on the entire, 300 node cluster. Queries
+that touch all chunks on all clusters are required to complete under an
+hour, so 10-12 sec overhead is very low. During previous large scale
+tests we run on 150 nodes 2 years ago, we were getting ~4 sec overhead.
+During this test, we measured 3.3 sec on 150-node configuration, which
+indicates we reduced the overhead, however since hardware used for these
+two tests was not the same, direct comparison would not be entirely
+fair.
 
 We showed the overhead for simple, interactive queries was on the order
-of 1.8 sec when dispatching a query on one of the 300-nodes (see Figure
-14). Yes, we can observe a non linearity starting from ~200 nodes,
-however that non-linearity is on the order of 0.03 second when going
-from 200 to 300 nodes. Since we are required to answer interactive
-queries under 10 sec, the <20% overhead is already acceptable, though we
-are planning to reduce it further in the future.
+of 1.8 sec when dispatching a query on one of the 300-nodes (see
+:numref:`fig-in2p3-simple-object-selection`). Yes, we can observe a non
+linearity starting from ~200 nodes, however that non-linearity is on the
+order of 0.03 second when going from 200 to 300 nodes. Since we are
+required to answer interactive queries under 10 sec, the <20% overhead
+is already acceptable, though we are planning to reduce it further in
+the future.
 
 We were able to run all interactive-type queries well under required 10
 second, with the exception of simple Object-Source join, which tool 11.2
@@ -4229,11 +4333,12 @@ materialization of subchunks for every query that involves a join – this
 is expected to be optimized and alleviated in the near future.
 
 More complex queries, such as a query that selects from a mid-size
-region showed linear scalability as well (Figure 15). The one time 6-sec
-“jump” between 100 and 150 node test is attributed to switching to
-different number of chunks: as we reduced the size of the cluster from
-150 to 100 nodes, we excluded some chunks that were previously falling
-inside searched region.
+region showed linear scalability as well
+(:numref:`fig-in2p3-mid-size-area`). The one time 6-sec “jump” between
+100 and 150 node test is attributed to switching to different number of
+chunks: as we reduced the size of the cluster from 150 to 100 nodes, we
+excluded some chunks that were previously falling inside searched
+region.
 
 We were also able to run complex queries, such as full table scans and
 near neighbor queries, and did not observe any anomalies.
@@ -5594,6 +5699,13 @@ running something like 33 of these queries serially to search
 through a 1B x 1B space. Running the 4 sections serially would
 reduce the memory requirements if desired.
 
+.. _fig-infinidb-near-neighbors:
+
+.. figure:: _static/infinidb_near_neighbors.png
+   :alt: InfiniDB Near Neighbors Cluster Query (N x N).
+
+   InfiniDB Near Neighbors Cluster Query (N x N).
+
 There are a number of variations on the near neighbor problem that
 provide a filter on one of the object tables, i.e. search for white
 dwarf that I would characterize as M x N problems where M << N. To
@@ -5611,6 +5723,13 @@ nearly 3 M rows per second for larger queries that did not fit in
 the data buffer cache ( which was configured at 8 GB ). These
 queries only used about 6% of memory for temporary space and could
 be run against an arbitrarily large N as desired.
+
+.. _fig-infinidb-m-n-selective-query:
+
+.. figure:: _static/infinidb_m_n_selective_query.png
+   :alt: InfiniDB M x N selective query.
+
+   InfiniDB M x N selective query.
 
 There are more details regarding the load rate, options on other
 grid sizes, limitation of this style grid analysis for larger
