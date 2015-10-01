@@ -50,7 +50,7 @@ trade-offs, applicability of technologies such as solid state disks,
 ingest techniques and others. We ran many tests to determine the design
 configuration, determine limits and uncover potential bottlenecks. In
 particular, we chose *MySQL* as our baseline open source, single-node
-DBMS and *XRootD* as an open source, elastic, distributed,
+DBMS and `XRootD`_ as an open source, elastic, distributed,
 fault-tolerant messaging system.
 
 We developed a prototype of the baseline architecture, called *Qserv*.
@@ -59,7 +59,7 @@ future problems with the underlying RDBMS, Qserv pays close attention to
 minimizing exposure to vendor-specific features and add-ons. Many key
 features including the scalable dispatch system and 2-level partitioner
 have been implemented at the prototype level and integrated with the two
-underlying production-quality components: MySQL and XRootD. Scalability
+underlying production-quality components: MySQL and `XRootD`_. Scalability
 and performance have been successfully demonstrated on a variety of
 clusters ranging from 20-node-100TB cluster to 300-node-30TB cluster,
 tables as large as 50 billion rows and concurrency exceeding 100,000
@@ -81,14 +81,14 @@ To increase the chances such a system will become reality in the next
 few years, in 2008 we initiated the SciDB array-based scientific
 database project. Due to lack of many traditional RDBMS-features in
 SciDB and still nascent fault tolerance, we believe it is easier to
-build the LSST database system using MySQL+XRootD than it would be to
+build the LSST database system using MySQL+\ `XRootD`_ than it would be to
 build it based on SciDB. In addition we closely collaborate with the
 MonetDB open source columnar database team – a successful demonstration
 of Qserv based on MonetDB instead of MySQL was done in 2012. Further, to
 stay current with the state-of-the-art in peta-scale data management and
 analysis, we continue a dialog with all relevant solution providers,
 both DBMS and Map/Reduce, as well as with data-intensive users, both
-industrial and scientific, through the XLDB conference series we lead,
+industrial and scientific, through the `XLDB`_ conference series we lead,
 and beyond.
 
 .. _intro:
@@ -454,14 +454,15 @@ synchronized scans are required for two-way joins between different
 tables. For a self-joins, a single shared scans will be sufficient,
 however each node must have sufficient memory to hold 2 chunks at any
 given time (the processed chunk and next chunk). Refer to the sizing
-model [1] for further details on the cost of shared scans.
+model [LDM-141]_ for further details on the cost of shared scans.
 
 .. FIXME footnote?
 
 Low-volume queries will be executed ad-hoc, interleaved with the shared
 scans. Given the number of spinning disks is much larger than the number
 of low-volume queries running at any given time, this will have very
-limited impact on the sequential disk I/O of the scans, as shown in [1].
+limited impact on the sequential disk I/O of the scans, as shown in
+[LDM-141]_.
 
 .. FIXME figure?
 
@@ -624,12 +625,10 @@ solution meets the above requirements today, and RDBMS is a much better fit
 than Map/Reduce-based system, primarily due to features such as indexes, schema
 and speed. For that reason, our baseline architecture consists of *custom*
 software built on two production components: an open source, “simple”,
-single-node, non-parallel DBMS (MySQL) and *XRootD* [2]. To ease potential
+single-node, non-parallel DBMS (MySQL) and `XRootD`_. To ease potential
 future DBMS migrations, the communication with the underlying DBMS relies on
 *basic* DBMS functionality only, and avoids any vendor-specific features and
 additions.
-
-.. FIXME footnote
 
 .. _fig-qserve-components:
 
@@ -660,9 +659,8 @@ New technologies that become available during the life of the system must be
 able to be incorporated easily. Expected sizes for the largest database
 catalogs (for the last data release, uncompressed, data only) are captured in
 :ref:`the table below <tab-expected-catalog-size>`. For further storage, disk
-and network bandwidth and I/O analyses, see [1].
+and network bandwidth and I/O analyses, see [LDM-141]_.
 
-.. FIXME footnote
 
 .. _tab-expected-catalog-size:
 
@@ -719,13 +717,11 @@ set of production pipelines:
   catalogs. Since alerts need to be generated in under a minute after
   data has been taken, data has to be ingested/updated in almost-real
   time. The number of row updates/ingested is modest: ~40K new rows
-  and updates occur every ~39 sec [60].
+  and updates occur every ~39 sec [Becla07]_.
 
 - Calibration Pipeline – it produces calibration information. Due to
   small data volume and no stringent timing requirements, ingest
   bandwidth needs are very modest.
-
-.. FIXME footnote
 
 In addition, the camera and telescope configuration is captured in the
 Engineering & Facility Database. Data volumes are very modest.
@@ -905,7 +901,7 @@ Query complexity and access patterns
 
 A compilation of representative queries provided by the LSST Science
 Collaborations, the Science Council, and other surveys have been
-captured [3]. These queries can be divided into several distinct groups:
+captured [common-queries]_. These queries can be divided into several distinct groups:
 analysis of a single object, analysis of objects meeting certain
 criteria in a region or across entire sky, analysis of objects close to
 other objects, analysis that require special grouping, time series
@@ -997,14 +993,12 @@ Both SciDB and MonetDB have strong potential to become the LSST database
 solution once they mature.
 
 Further, our research led to creation a new, now
-internationally-recognized conference series, Extremely Large Databases
-(XLDB) [4], [5]. As we continue leading the XLDB effort, it gives us a
-unique opportunity to reach out to a wide range of high-profile
-organizations dealing with large data sets, and raise awareness of the
-LSST needs among researchers and developers working on both MR and DBMS
-solutions.
-
-.. FIXME footnotes
+internationally-recognized conference series, `Extremely Large Databases
+(XLDB) <http://xldb.org>`_. As we continue leading the `XLDB`_ effort, it
+gives us a unique opportunity to reach out to a wide range of
+high-profile organizations dealing with large data sets, and raise
+awareness of the LSST needs among researchers and developers working on
+both MR and DBMS solutions.
 
 The remaining of this chapter discusses lessons learned to-date, along
 with a description of relevant tests we have run.
@@ -1015,63 +1009,57 @@ Map/Reduce-based and NoSQL Solutions
 ------------------------------------
 
 Map/Reduce is a software framework to support distributed computing on
-large data sets on clusters of computers. Google’s implementation [6],
-believed to be the most advanced, is proprietary, and in spite of Google
-being one of the LSST collaborators, we were unable to gain access to
-any of their MR software or infrastructure. Additional Google-internal
-MR-related projects include BigTable [7], Chubby [8], and Sawzall [9].
-BigTable addresses the need for rapid searches through a specialized
-index; Chubby adds transactional support; and Sawzall is a procedural
-language for expressing queries. Most of these solutions attempt to add
-partial database-like features such as schema catalog, indexes, and
-transactions. The most recent MR developments at Google are Dremel [10]
-- an interactive ad-hoc query system for analysis of read-only data, and
-Tenzing – a full SQL implementation on the MR Framework [11]. [#]_
+large data sets on clusters of computers. Google’s implementation
+[Dean04]_, believed to be the most advanced, is proprietary, and in
+spite of Google being one of the LSST collaborators, we were unable to
+gain access to any of their MR software or infrastructure. Additional
+Google-internal MR-related projects include BigTable [Bigtable06]_,
+Chubby [Chubby]_, and Sawzall [Pike]_.  BigTable addresses the need for rapid
+searches through a specialized index; Chubby adds transactional support;
+and Sawzall is a procedural language for expressing queries. Most of
+these solutions attempt to add partial database-like features such as
+schema catalog, indexes, and transactions. The most recent MR
+developments at Google are Dremel [Dremel]_ - an interactive ad-hoc query
+system for analysis of read-only data, and Tenzing – a full SQL
+implementation on the MR Framework [Chattopadhyay11]. [#]_
 
-.. [#] Through our XLDB efforts, Google has provided us with a preprint of a Tenzing manuscript accepted for publication at VLDB 2011.
-
-.. FIXME footnotes
+.. [#] Through our `XLDB`_ efforts, Google has provided us with a
+   preprint of a Tenzing manuscript accepted for publication at VLDB 2011.
 
 In parallel to the closed-source systems at Google, similar open-source
 solutions are built by a community of developers led by Facebook, Yahoo!
 and Cloudera, and they have already gained wide-spread acceptance and
 support. The open source version of MR, *Hadoop*, has became popular in
 particular among industrial users. Other solutions developed on top (and
-“around”) Hadoop include *HBase* (equivalent of BigTable), *Hive*
+“around”) Hadoop include `HBase`_ (equivalent of BigTable), `Hive`_
 (concept similar to Google's Dremel), *Pig Latin* (equivalent to
-Google's Sawzall), *Zookeeper* (equivalent to Google's Chubby), *Simon*,
+Google's Sawzall), `Zookeeper`_ (equivalent to Google's Chubby), *Simon*,
 and others. As in Google's case, the primary purpose of building these
 solutions is adding database-features on top of MR. Hadoop is
-commercially supported by Cloudera, Hortonworks and Hadapt [12, 13, 14]
+commercially supported by Cloudera, `Hortonworks`_ [Yahoo] and
+`Hadapt`_.
 
-.. FIXME footnotes
-
-We have experimented with Hadoop (0.20.2) and Hive (0.7.0) in mid 2010
-using a 1 billion row USNO-B data set on a 64 node cluster [15]. Common
-LSST queries were tested, ranging from low-volume type (such as finding
-a single object, selecting objects near other know object), through
+We have `experimented with Hadoop (0.20.2) and Hive (0.7.0) in mid 2010
+using a 1 billion row USNO-B data set on a 64 node cluster
+<http://dev.lsstcorp.org/trac/wiki/db`Hive`_Experiment>`_. Common LSST
+queries were tested, ranging from low-volume type (such as finding a
+single object, selecting objects near other know object), through
 high-volume ones (full table scans) to complex queries involving joins
 (join was implemented in a standard way, in the *reduce* step). The
-results were discussed with Hadoop/Hive experts from Cloudera.
+results were discussed with Hadoop/`Hive`_ experts from Cloudera.
 Periodically we revisit the progress and feature set available in the
 Hadoop ecosystem, but to date we have not found compelling reasons to
 consider Hadoop as a serious alternative for managing LSST data.
 
-.. FIXME footnotes
-
-Independently, Microsoft developed a system called *Dryad*, geared
+Independently, Microsoft developed a system called `Dryad`_, geared
 towards executing distributed computations beyond “flat” *Map* and
 *Reduce*, along with a corresponding language called *LINQ*. Due to its
-strong dependence on Windows OS and limited availability, use of Dryad
-outside of Microsoft is very limited. Based on news reports [66],
-Microsoft dropped support for Dryad back in late 2011.
-
-.. FIXME footnotes
+strong dependence on Windows OS and limited availability, use of `Dryad`_
+outside of Microsoft is very limited. Based on news reports [Zdnet]_,
+Microsoft dropped support for `Dryad`_ back in late 2011.
 
 Further, there is a group of new emerging solutions often called as
-*NoSQL*. The two most popular ones are *MongoDB* and *Cassandra*.
-
-.. FIXME footnotes
+*NoSQL*. The two most popular ones are `MongoDB`_ and `Cassandra`_.
 
 The remaining of this section discusses all of the above-mentioned
 products.
@@ -1123,12 +1111,12 @@ partitions, limiting the potential performance of pairwise analysis.
 Microsoft SQL Server offers Distributed Partitioned Views, which provide
 much of the functionality of a shared-nothing parallel database by
 federating multiple tables across multiple servers into a single view.
-This technology is used in the interesting GrayWulf project [16, 17],
-which is designed to host observational data consisting of Pan-STARRS
-PS1 [18] astronomical detections and summary information about the
-objects that produced them. GrayWulf partitions observation data across
-nodes by “zones” [19], but these partitions cannot overlap. Fault
-tolerance is built in by having three copies of the data, with one
+This technology is used in the interesting GrayWulf project [Szalay08]_
+[Simmhan09]_ which is designed to host observational data consisting of
+Pan-STARRS PS1 [Jedicke06]_ astronomical detections and summary information
+about the objects that produced them. GrayWulf partitions observation
+data across nodes by “zones” [Gray07]_, but these partitions cannot overlap.
+Fault tolerance is built in by having three copies of the data, with one
 undergoing updates – primarily appending new detections – and the other
 two in a hot/warm relationship for failover. GrayWulf has significant
 limitations, however. The object information for the Pan-STARRS PS1 data
@@ -1138,16 +1126,14 @@ queries and pairwise analysis. The overall system design is closely tied
 to the commercial SQL Server product, and re-hosting it on another
 RDBMS, in particular an open source one, would be quite difficult.
 
-.. FIXME footnotes
-
 The MPP database is ideal for the LSST database architecture.
 Unfortunately, the only scalable, proven off-the-shelf solutions are
 commercial and expensive: Teradata, Greenplum. Both systems are (or
 recently were) behind today world's largest production database systems
-at places such as eBay [20, 21] and Walmart [22]. IBM's DB2 “parallel
-edition”, even though it implements a shared-nothing architecture since
-mid-1990 focuses primarily on supporting unstructured data (XML), not
-large scale analytics.
+at places such as eBay [dbms209]_ [dbms210]_ and Walmart [eweek04]_.
+IBM's DB2 “parallel edition”, even though it implements a shared-nothing
+architecture since mid-1990 focuses primarily on supporting unstructured
+data (XML), not large scale analytics.
 
 The emergence of several new startups, such as Aster Data, DataAllegro,
 ParAccel, GridSQL and SciDB is promising, although some of them have
@@ -1165,7 +1151,7 @@ joins, poor stability and lack of good documentation.
 
 SciDB is the only parallel open source DBMS currently available on the
 market. It is a columnar, shared-nothing store based on an array data
-model. The project has been inspired by the LSST needs [23], and the
+model. The project has been inspired by the LSST needs [scidb]_, and the
 LSST Database team is continuously in close communication with the SciDB
 developers. SciDB’s architectural features of chunking large arrays into
 overlapping chunks and distributing these chunks across a shared nothing
@@ -1189,9 +1175,9 @@ RDBMS, in particular for the variety of joins required (including star
 schema, merge joins, and self joins). Standard RDBMS features like
 views, stored procedures, and privileges would have to be added from the
 ground up. Third, SciDB's fault tolerance is not yet at the level of
-XRootD. Overall, the level of coding we would have to do to build on the
+`XRootD`_. Overall, the level of coding we would have to do to build on the
 current SciDB implementation appears to be larger than what we are
-planning on top of XRootD/MySQL. As SciDB's implementation progresses,
+planning on top of `XRootD`_/MySQL. As SciDB's implementation progresses,
 though, this trade-off could change.
 
 .. _object-oriented-solution:
@@ -1202,7 +1188,7 @@ Object-oriented solutions
 The object-oriented database market is very small, and the choices are
 limited to a few small proprietary solutions, including Objectivity/DB
 and InterSystems Caché. Objectivity/DB was used by the BaBar experiment
-in 1999 – 2002, and the BaBar database reached a petabyte [24]. The
+in 1999 – 2002, and the BaBar database reached a petabyte [Becla05]_. The
 members of LSST database team, being the former members of the BaBar
 database team are intimately familiar with the BaBar database
 architecture. The Objectivity/DB was used primarily as a simple data
@@ -1224,15 +1210,16 @@ Row-based vs columnar stores
 
 Row-based stores organize data on disk as rows, while columnar store –
 as columns. Column-store databases emerged relatively recently, and are
-based on the C-store work [27]. By operating on columns rather than
-rows, they are able to retrieve only the columns required for a query
-and greatly compress the data within each column. Both reduce disk I/O
-and hence required hardware by a significant factor for many analytical
-queries on observational data that only use a fraction of the available
-columns. Current column stores also allow data to be partitioned across
-multiple nodes, operating in a shared-nothing manner. Column stores are
-less efficient for queries retrieving small sets of full-width records,
-as they must reassemble values from all of the columns.
+based on the C-store work [Stonebaker05]_. By operating on columns
+rather than rows, they are able to retrieve only the columns required
+for a query and greatly compress the data within each column. Both
+reduce disk I/O and hence required hardware by a significant factor for
+many analytical queries on observational data that only use a fraction
+of the available columns. Current column stores also allow data to be
+partitioned across multiple nodes, operating in a shared-nothing manner.
+Column stores are less efficient for queries retrieving small sets of
+full-width records, as they must reassemble values from all of the
+columns.
 
 Our baseline architecture assumes all large-volume queries will be
 answered through shared scans, which reduces wasting disk I/O for
@@ -1244,7 +1231,7 @@ store.
 
 Nevertheless, a column store could still be more efficient. Work done at
 Google (using Dremel) has claimed that “the crossover point often lies
-at dozens of fields but it varies across data sets” [10]. In our case,
+at dozens of fields but it varies across data sets” [Dremel]_. In our case,
 the most frequently accessed table: Object, will have over “20 dozens”
 columns. The Source, DiaObject, and DiaSource tables will each have
 about 4 dozen columns. These could be wide enough that all
@@ -1272,13 +1259,14 @@ DB2, but they do not fit well into LSST needs, since we would like to
 provide all scientists with the ability to install the LSST database at
 their institution at low licensing and maintenance cost.
 
-Columnar stores are starting to gain in popularity. Although the list is
-already relatively large [28], the number of choices worth considering
-is relatively small. Today's most popular commercial choice is HP
-Vertica, and the open source solutions include MonetDB and Calpont's
-InfiniDB. The latter also implements shared nothing MPP, however the
-multi-server version is only available as part of the commercial
-edition.
+Columnar stores are starting to gain in popularity. Although `the list
+is already relatively large
+<http://en.wikipedia.org/wiki/Column-oriented_DBMS>`_, the number of
+choices worth considering is relatively small. Today's most popular
+commercial choice is HP Vertica, and the open source solutions include
+MonetDB and Calpont's InfiniDB. The latter also implements shared
+nothing MPP, however the multi-server version is only available as part
+of the commercial edition.
 
 With help from Calpont, we evaluated InfiniDB and demonstrated it could
 be used for the LSST system – we run the most complex (near neighbor)
@@ -1394,7 +1382,7 @@ check-pointing done by MR (after every “map” and every “reduce” step)
 simplifies recoverability, at the expense of performance. In contrast,
 databases are built with the optimistic assumptions that failures are
 rare: they generally checkpoint only when necessary. This has been shown
-through various studies [29]
+through various studies [Pavlo09]_.
 
 The frequent checkpointing employed by MR, in combination with limited
 set of operators discussed earlier often leads to inefficient usages of
@@ -1485,11 +1473,11 @@ Map/Reduce and RDBMS are given in the table below.
    | resources             |                     |                              |
    | Catalog/schema        | Started adding      | Much better than in MR.      |
    |                       | support, e.g.,      |                              |
-   |                       | Hive, HadoopDB      |                              |
+   |                       | `Hive`_, HadoopDB   |                              |
    +-----------------------+---------------------+------------------------------+
    | Indexes (primarily    | Started adding      | Much better than in MR.      |
    | for simple queries    | support, e.g.,      |                              |
-   | from public that      | Hive, HadoopDB      |                              |
+   | from public that      | `Hive`_, HadoopDB   |                              |
    | require real time     |                     |                              |
    | response)             |                     |                              |
    +-----------------------+---------------------+------------------------------+
@@ -1518,7 +1506,7 @@ addition of indexes, schemas, and other database-ish features.\ [#]_
 Some have even built a complete relational database system\ [#]_ on top
 of MR.
 
-.. [#] An example of that is `Hive <http://hadoop.apache.org/hive>`_
+.. [#] An example of that is `Hive`_.
 
 .. [#] An example of that is `HadoopDB <http://db.cs.yale.edu/hadoopdb/hadoopdb.html>`_
 
@@ -1544,7 +1532,7 @@ The database community has benefited from MR's experience in two ways:
 .. [#] ParAccel, Vertica, Aster Data, Greenplum, DATAllegro (now part of Microsoft), Datapuia, Exasol and SciDB
 
 The fact MR community is rapidly adding database/SQL like features on
-top of their plain MR (Tenzing, Hive, HadoopDB, etc), confirms the need
+top of their plain MR (Tenzing, `Hive`_, HadoopDB, etc), confirms the need
 for database-like features (indexes, schemas, catalogs, sql).
 
 As we continue monitoring the latest development in both RDBMS and MR
@@ -1701,7 +1689,7 @@ To determine performance of full table scan, we measured:
 1. raw disk speed with ``dd if=<large file> of=/dev/zero`` and got
    54.7 MB/sec (2,048,000,000 bytes read in 35.71 sec)
 
-2. speed of ``select count(\*) from XX where muRA = 4.3`` using a 1
+2. speed of ``select count(*) from XX where muRA = 4.3`` using a 1
    billion row table. There was no index on muRA, so this forced a full
    table scan. Note that we did not do ``SELECT *`` to avoid measuring
    speed of converting attributes. The scan of 72,117,127,716 bytes took
@@ -1747,7 +1735,7 @@ a single partition.
 Proposed partitioning scheme will involve partitioning each large table
 into a “reasonable” number of partitions, typically measured in low tens
 of thousands. Details analysis are done in the storage spreadsheet
-(`LDM-141 <http://ls.st/LDM-141>`_). Should we need to, we can partition
+([LDM-141]_). Should we need to, we can partition
 the largest tables into larger number of smaller partitions, which would
 reduce partition size. Given the hardware available and our time
 constraints, so far we have run tests with up to 10 million row
@@ -1777,7 +1765,7 @@ Solid state disks
 
 We also run a series of tests with solid state disks to determine where
 it would be most cost-efficient to use solid state disks. The tests are
-described in details in [30]. We found that concurrent query execution
+described in details in [Docushare-11701]_. We found that concurrent query execution
 is dominated by software inefficiencies when solid-state devices (SSDs)
 with fast random I/O are substituted for slow disks. Because the cost
 per byte is higher for SSDs, spinning disks are cheaper for bulk
@@ -1921,12 +1909,12 @@ Potential Key Risks
 -------------------
 
 Insufficient **database performance and scalability** is one of the
-major risks [31].
+major risks [Docushare-7025]_.
 
 We have a prototype system (*Qserv*) that will be turned into a
 production system. Given that a large fraction of its functionality is
 derived from two stable, production quality, open source components
-(MySQL and XRootD), turning it into production system is possible during
+(MySQL and `XRootD`_), turning it into production system is possible during
 the LSST construction phase.
 
 A viable alternative might be to use an off-the-shelf system. In fact,
@@ -1939,7 +1927,7 @@ beta would suffice, beginning of production scalability approaching few
 hundred terabytes would be sufficient). Database systems larger than the
 largest single LSST data set have been successfully demonstrated in
 production today. For example, eBay manages a 10+ petabyte production
-database[21] and expects to deploy a 36 petabyte system later in 2011.
+database [dbms210]_ and expects to deploy a 36 petabyte system later in 2011.
 For comparison, the largest single LSST data set, including all indexes
 and overheads is expected to be below 10 petabytes in size, and will be
 produced ~20 years from now (the last Data Release).\ [#]_ The eBay
@@ -1961,7 +1949,7 @@ as MySQL is another potential risk. MySQL has recently been purchased by
 Oracle, leading to doubts as to whether the MySQL project will be
 sufficiently supported in the long-term. Since the purchase, several
 independent forks of MySQL software have emerged, including MariaDB
-(supported by one of the MySQL founders), Drizzle (supported by key
+(supported by one of the MySQL founders), `Drizzle`_ (supported by key
 architects of MySQL), and Percona. Should MySQL disappear, these
 open-source, MySQL-compatible\ [#]_ systems are a solid alternative.
 Should we need to migrate to a different DBMS, we have taken multiple
@@ -1980,7 +1968,7 @@ measures to minimize the impact:
   which are easier to port (only the interface binding part needs to be
   migrated).
 
-.. [#] With the exception of Drizzle, which introduced major
+.. [#] With the exception of `Drizzle`_, which introduced major
    changes to the architecture.
 
 **Complex data analysis**. The most complex analysis we identified so
@@ -2040,17 +2028,17 @@ is expected in late 2011. Further, to stay current with the
 state-of-the-art in peta-scale data management and analysis, we continue
 a dialog with all relevant solution providers, both DBMS and Map/Reduce,
 as well as with data-intensive users, both industrial and scientific,
-through the XLDB conference and workshop series we lead, and beyond.
+through the `XLDB`_ conference and workshop series we lead, and beyond.
 
 To understand query complexity and expected access patterns, we are
 working with LSST Science Collaborations and the LSST Science Council to
 understand the expected query load and query complexity. We have
-compiled a set of common queries [3] and distilled this set into a
-smaller set of representative queries we use for various scalability
-tests–this set represents each major query type, ranging from trivial
-low volume, to complex correlations. [32]. We have also talked to
-scientists and database developers from other astronomical surveys,
-including SDSS, 2MASS, Gaia, DES, LOFAR and Pan-STARRS.
+compiled a set of common queries [common-queries]_ and distilled this
+set into a smaller set of representative queries we use for various
+scalability tests–this set represents each major query type, ranging
+from trivial low volume, to complex correlations. [perftests]_. We have also
+talked to scientists and database developers from other astronomical
+surveys, including SDSS, 2MASS, Gaia, DES, LOFAR and Pan-STARRS.
 
 To deal with unpredictability of analysis, we will use shared scans.
 With shared scans, users will have access to all the data, all the
@@ -2070,7 +2058,7 @@ To demonstrate feasibility of running LSST queries without relying on
 expensive commercial solutions, and to mitigate risks of not having an
 off-the-shelf system in time for LSST construction, we built a prototype
 system for user query access, called *Query Service* (Qserv). The system
-relies on two production-quality components: MySQL and XRootD. The
+relies on two production-quality components: MySQL and `XRootD`_. The
 prototype closely follows the LSST baseline database architecture
 described in chapter 3
 
@@ -2103,15 +2091,15 @@ transmission. Loose coupling is maintained in order to allow the system
 to leverage a more advanced or more suitable database engine in the
 future.
 
-.. _xrootd:
+.. _sec-xrootd:
 
 XRootD
 ~~~~~~
 
-The XRootD distributed file system is used to provide a distributed,
+The `XRootD`_ distributed file system is used to provide a distributed,
 data-addressed, replicated, fault-tolerant communication facility to
 Qserv. Re-implementing these features would have been non-trivial, so we
-wanted to leverage an existing system. XRootD has provided scalability,
+wanted to leverage an existing system. `XRootD`_ has provided scalability,
 fault-tolerance, performance, and efficiency for over 10 years of in the
 high-energy physics community, and its relatively flexible API enabled
 its use as a more general communication medium instead of a file system.
@@ -2119,14 +2107,14 @@ Since it was designed to serve large data sets, we were confident that
 it could mediate not only query dispatch communication, but also bulk
 transfer of results.
 
-A XRootD cluster is implemented as a set of data servers and a
+A `XRootD`_ cluster is implemented as a set of data servers and a
 redirector(s). A client connects to the redirector, which acts as a
 caching namespace lookup service that redirects clients to appropriate
-data servers. In Qserv, XRootD data servers become Qserv workers by
-plugging custom code into XRootD as a custom file system implementation.
-The Qserv master dispatches work as an XRootD client to workers by
-writing to partition-addressed XRootD paths and reads results from
-hash-addressed XRootD paths.
+data servers. In Qserv, `XRootD`_ data servers become Qserv workers by
+plugging custom code into `XRootD`_ as a custom file system implementation.
+The Qserv master dispatches work as an `XRootD`_ client to workers by
+writing to partition-addressed `XRootD`_ paths and reads results from
+hash-addressed `XRootD`_ paths.
 
 .. _fig-xrootd:
 
@@ -2263,7 +2251,7 @@ and future LSST needs.
 Dispatch
 --------
 
-The baseline Qserv uses XRootD as a distributed, highly-available
+The baseline Qserv uses `XRootD`_ as a distributed, highly-available
 communications system to allow Qserv frontends to communicate with data
 workers. Current versions of Qserv use a synchronous client API with
 named files as communication channels, but the baseline system will
@@ -2304,11 +2292,11 @@ partial query results to end users.
 Frontend
 ~~~~~~~~
 
-In 2012, a new XRootD client API was developed to address our concerns
+In 2012, a new `XRootD`_ client API was developed to address our concerns
 over the older version's scalability (uncovered during a 150 node, 30TB
 scalability test). The new client API began production use for the
-broader XRootD community in late 2012. Subsequently, work began under
-our guidance towards an XRootD client API that was based on
+broader `XRootD`_ community in late 2012. Subsequently, work began under
+our guidance towards an `XRootD`_ client API that was based on
 request-response interaction over named channels, instead of opening,
 reading, and writing files. Qserv will begin porting to this API in late
 2013, and in the process should eliminate a significant body of code
@@ -2332,7 +2320,7 @@ number of concurrent chunk queries in flight expected in normal
 operation. For example, with the sky split into 10k pieces, having 10
 full-scanning queries running concurrently would have 100k concurrent
 chunk queries--too large a number of threads to allow on a single
-machine. Hence an asynchronous API to XRootD is crucial. Threads are
+machine. Hence an asynchronous API to `XRootD`_ is crucial. Threads are
 used to parallelize multiple CPU-bound tasks. While it does not seem to
 be important to parse/analyze/manipulate a single user query in parallel
 (and such a task would be a research topic), the retrieval and
@@ -2350,7 +2338,7 @@ Worker
 
 The Qserv worker uses both threads and asynchronous calls to provide
 concurrency and parallelism. To service incoming requests from the
-XRootD API, an asynchronous API is used to receive requests and enqueue
+`XRootD`_ API, an asynchronous API is used to receive requests and enqueue
 them for action. Threads are maintained in a thread pool to perform
 incoming queries and wait on calls into the DBMS's API (currently, the
 MySQL C-API, which does not seem to have an asynchronous API). Threads
@@ -2378,7 +2366,7 @@ available CPU cores when executing queries, as an example, to complete
 one full table scan on a table consisting of 1,000 chunks, 1,000 queries
 (processes) will be executed. To efficiently handle large number of
 processes that are executed on each worker, we ended up rewriting the
-XRootD client and switching from thread-per-request model to a
+`XRootD`_ client and switching from thread-per-request model to a
 thread-pool model. The new client is completely asynchronous, with real
 call-backs.
 
@@ -2403,7 +2391,7 @@ call-backs.
 +--------------------------+-------------------------------------------------+
 | Worker-xrootd plugin     | Small thread pool O(#cores) to make blocking    |
 |                          | mysql C-API calls into                          |
-|                          | local mysqld; callback threads from XRootD      |
+|                          | local mysqld; callback threads from `XRootD`_   |
 |                          | perform admission/scheduling of tasks from      |
 |                          | frontend and transmission of results            |
 +--------------------------+-------------------------------------------------+
@@ -2793,7 +2781,7 @@ both the static, as well as the dynamic metadata.
 Cluster and Task Management
 ---------------------------
 
-Qserv delegates management of cluster nodes to XRootD. The XRootD system
+Qserv delegates management of cluster nodes to `XRootD`_. The `XRootD`_ system
 manages cluster membership, node registration/de-registration, address
 lookup, replication, and communication. Its distributed filesystem API
 provides data-addressed communication channels to the rest of Qserv,
@@ -2802,7 +2790,7 @@ existence of replicas, and node failure. The Qserv manager focuses on
 dispatching queries to endpoints and Qserv workers focus on receiving
 and executing queries on their local data.
 
-Cluster management performed outside of XRootD does not directly affect
+Cluster management performed outside of `XRootD`_ does not directly affect
 query execution, but include coordinating data distribution, loading,
 nodes joining/leaving and is discussed in :ref:`qserve-admin`.
 
@@ -2826,10 +2814,10 @@ The components that comprise Qserv include features that independently
 provide failure-prevention and failure-recovery capabilities. The MySQL
 proxy is designed to balance its load among several underlying MySQL
 servers and provide automatic fail-over in the event a server fails. The
-XRootD distributed file system provides multiple managers and highly
+`XRootD`_ distributed file system provides multiple managers and highly
 redundant servers to provide high bandwidth, contend with high request
 rates, and cope with unreliable hardware. And the Qserv master itself
-contains logic that works in conjunction with XRootD to isolate and
+contains logic that works in conjunction with `XRootD`_ to isolate and
 recover from worker-level failures.
 
 A worker-level failure denotes any failure mode that can be confined to
@@ -2845,13 +2833,13 @@ behave as if a software fault had occurred. The worker process would
 therefore crash and all chunk queries belonging to that worker would be
 lost. The in-flight queries on its local mysqld would be cleaned up and
 have resources freed. The Qserv master's requests to retrieve these
-chunk queries via XRootD would then return an error code. The master
+chunk queries via `XRootD`_ would then return an error code. The master
 responds by re-initializing the chunk queries and re-submits them to
-XRootD. Ideally, duplicate data associated with the chunk queries exists
-on other nodes. In this case, XRootD silently re-routes the request(s)
+`XRootD`_. Ideally, duplicate data associated with the chunk queries exists
+on other nodes. In this case, `XRootD`_ silently re-routes the request(s)
 to the surviving node(s) and all associated queries are completed as
 usual. In the event that duplicate data does not exist for one or more
-chunk queries, XRootD would again return an error code. The master will
+chunk queries, `XRootD`_ would again return an error code. The master will
 re-initialize and re-submit a chunk query a fixed number of times
 (determined by a parameter within Qserv) before giving up, logging
 information about the failure, and returning an error message to the
@@ -2861,25 +2849,25 @@ Error handling in the event that an arbitrary hardware or software bug
 (perhaps within the Qserv worker itself) causes a worker process or
 machine to crash proceeds in the same manner described above. The same
 is true in the event that network loss or transient
-sluggishness/overload has the limited effect of preventing XRootD from
+sluggishness/overload has the limited effect of preventing `XRootD`_ from
 communicating with one or more worker nodes. As long as such failures
 are limited to a finite number of workers and do not extend to the Qserv
-master node, XRootD is designed to record the failure and return an
+master node, `XRootD`_ is designed to record the failure and return an
 error code. Moreover, if duplicate data exists on other nodes, this will
-be registered within XRootD, which will successfully route any
+be registered within `XRootD`_, which will successfully route any
 subsequent chunk queries.
 
 In the event of an unrecoverable error, the Qserv master is equipped
 with a status/error messaging mechanism designed to both log detailed
 information about the failure and to return a human-readable error
 message to the user. This mechanism includes C++ exception handling
-logic that encapsulates all of the master's interactions with XRootD. If
+logic that encapsulates all of the master's interactions with `XRootD`_. If
 an unrecoverable exception occurs, the master gracefully terminates the
 query, frees associated resources, logs the event, and notifies the
 user. Qserv's internal status/error messaging system also generates a
 status message and timestamp each time an individual chunk query
 achieves a milestone. Such milestones include: chunk query dispatch,
-written to XRootD, results read from XRootD, results merged, and query
+written to `XRootD`_, results read from `XRootD`_, results merged, and query
 finalized. This real-time status information provides useful context in
 the event of an unrecoverable error.
 
@@ -2925,10 +2913,10 @@ Installation
 
 Qserv as a service requires a number of components that all need to be
 running, and configured together. On the master node we require mysqld,
-mysql-proxy, XRootD, cmsd, qserv metadata service, and the qserv master
+mysql-proxy, `XRootD`_, cmsd, qserv metadata service, and the qserv master
 process. On each of the worker nodes there will also be the mysqld,
-cmsd, and XRootD service. These major components come from the MySQL,
-XRootD, and Qserv distributions. But to get these to work together we
+cmsd, and `XRootD`_ service. These major components come from the MySQL,
+`XRootD`_, and Qserv distributions. But to get these to work together we
 will also require many more software package, such as protobuf, lua,
 expat, libevent, python, zope, boost, java, antlr, and so on. And many
 of these require more recent versions than you are provided in most
@@ -3080,7 +3068,7 @@ workers. The main admin script, qserv-admin, will supply the base needs,
 with starting all processes needed for the service, in order, and taking
 down all processes to stop the service. Also base monitoring of service
 is supplied here, to report on processes that are running, and
-responding to base queries, to check on MySQL or XRootD dying or locking
+responding to base queries, to check on MySQL or `XRootD`_ dying or locking
 up. Also is supplied is the updating of the configuration definitions
 from the master out to all workers, such that all machines need to have
 the same configurations for the services.
@@ -3152,7 +3140,7 @@ have a quality of a typical late-alpha / early-beta software.
 
 Future work includes:
 
-- switching to a new XRootD client
+- switching to a new `XRootD`_ client
 
 - extending metadata to support run-time statistics, implementing query
   management tools
@@ -3187,8 +3175,8 @@ Future work includes:
 - security
 
 **Switching to a new XRootD client**. Based on large-scale tests we
-run the Qserv (the XRootD client qserv relies on) uses threads
-inefficiently. The XRootD team recently implemented a new,
+run the Qserv (the `XRootD`_ client qserv relies on) uses threads
+inefficiently. The `XRootD`_ team recently implemented a new,
 thread-efficient client requested by us.
 
 **Extending metadata to support run-time statistics, implementing query
@@ -3340,8 +3328,9 @@ Ideal environment
 ~~~~~~~~~~~~~~~~~
 
 Based on the detailed spreadsheet analysis, we expect the ultimate LSST
-production system will be composed of few hundred database servers [33],
-so a realistic test should include a cluster of at least 100 nodes.
+production system will be composed of few hundred database servers
+[LDM-144]_, so a realistic test should include a cluster of at least 100
+nodes.
 
 Total database size of a single data release will vary from ~1.3 PB
 (DR1) to ~15 PB (DR11).\ [#]_ Realistic testing requires at least ~20-30
@@ -3424,7 +3413,7 @@ We have run several large scale tests
 
 2. (2010) several 100-node tests run at SLAC [58]. These tests helped us
    uncover many bottlenecks and prompted rewriting parts of our
-   software, as well as implementing several missing features in XRootD.
+   software, as well as implementing several missing features in `XRootD`_.
 
 3. (4/2011) A 30 TB test on 150-node SLAC cluster using Qserv in
    40/100/150 node configurations, using 2 billion row Object and 32
@@ -3459,7 +3448,7 @@ Hardware
 We configured a cluster of 150 nodes interconnected via gigabit
 Ethernet. Each node had 2 quad-core Intel Xeon X5355 processors with
 16GB memory and one 500GB 7200RPM SATA disk. Tests were conducted with
-Qserv SVN r21589, MySQL 5.1.45 and XRootD 3.0.2 with Qserv patches.
+Qserv SVN r21589, MySQL 5.1.45 and `XRootD`_ 3.0.2 with Qserv patches.
 
 .. _test-150-node-data:
 
@@ -3870,17 +3859,17 @@ Alternate partitioning
 The rectangular fragmentation in right ascension and declination, while
 convenient to visualize physically for humans, is problematic due to
 severe distortion near the poles. We are exploring the use of a
-hierarchical scheme, such as the hierarchical triangular mesh [34] for
-partitioning and spatial indexing. These schemes can produce partitions
-with less variation in area, and map spherical points to integer
-identifiers encoding the points' partitions at many subdivision levels.
-Interactive queries with very small spatial extent can then be rewritten
-to operate over a small set of fine partition IDs. If chunks are stored
-in partition ID order, this may allow I/O to occur at below sub-chunk
-granularity without incurring excessive seeks. Another bonus is that
-mature, well tested, and high-performance open source libraries exist
-for computing the partition IDs of points and mapping spherical regions
-to partition ID sets.
+hierarchical scheme, such as the hierarchical triangular mesh [Kunszt]_
+for partitioning and spatial indexing. These schemes can produce
+partitions with less variation in area, and map spherical points to
+integer identifiers encoding the points' partitions at many subdivision
+levels.  Interactive queries with very small spatial extent can then be
+rewritten to operate over a small set of fine partition IDs. If chunks
+are stored in partition ID order, this may allow I/O to occur at below
+sub-chunk granularity without incurring excessive seeks. Another bonus
+is that mature, well tested, and high-performance open source libraries
+exist for computing the partition IDs of points and mapping spherical
+regions to partition ID sets.
 
 Distributed management
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -4038,7 +4027,7 @@ as quickly as possible, allowing the Qserv workers to prioritize as they
 know best. Secondly, the first query dispatch against a chunk takes ~5s,
 so that cluster cold start latency on a full table scan of ~10,000
 chunks takes approximately 100s with this many dispatch threads.
-Subsequently, XRootD caching allows for near instantaneous dispatches in
+Subsequently, `XRootD`_ caching allows for near instantaneous dispatches in
 comparison.
 
 The thread pool for result reads was given a much smaller size: just 20
@@ -4139,12 +4128,12 @@ Software stability issues identified
 
 The initial Qserv installation did not function for queries involving
 300 nodes, even though subsets involving 10, 50, 100, and 150 nodes
-functioned properly. The first culprit was the use of an older XRootD
+functioned properly. The first culprit was the use of an older `XRootD`_
 release that was missing recent patches for a particular client race
 condition. Another culprit was instability exacerbated by excessive use
 of threads in the original threading model that the testing in section
 9.5 was to address. This was addressed by re-tuning relevant threading
-constants. The new XRootD client we are working on (expected to be ready
+constants. The new `XRootD`_ client we are working on (expected to be ready
 in November of 2013) is expected to further improve thread management.
 
 .. _in2p3-queries:
@@ -4403,7 +4392,7 @@ Fault Tolerance
 To prove Qserv can gracefully handle faults, we artificially triggered
 different error conditions, such as corrupting random parts of a
 internal MySQL files while Qserv is reading them, or corrupting data
-sent between various components of the Qserv (e.g., from the XRootD to
+sent between various components of the Qserv (e.g., from the `XRootD`_ to
 the master process).
 
 .. _demo-worker-failure:
@@ -4417,9 +4406,9 @@ communicate with a worker node.
 
 When a relevant worker (i.e. one managing relevant data) has failed
 prior to query execution, either 1) duplicate data exists on another
-worker node, in which case XRootD silently routes requests from the
+worker node, in which case `XRootD`_ silently routes requests from the
 master to this other node, or 2) the data is unavailable elsewhere, in
-which case XRootD returns an error code in response to the master's
+which case `XRootD`_ returns an error code in response to the master's
 request to open for write. The former scenario has been successfully
 demonstrated during multi-node cluster tests. In the latter scenario,
 Qserv gracefully terminates the query and returns an error to the user.
@@ -4430,24 +4419,24 @@ multi-worker process setup.
 Worker failure during query execution can, in principle, have several
 manifestations.
 
-1. If XRootD returns an error to the Qserv master in response to a
+1. If `XRootD`_ returns an error to the Qserv master in response to a
    request to open for write, Qserv will repeat request for open a fixed
    number (e.g. 5) of times. This has been demonstrated.
 
-2. If XRootD returns an error to the Qserv master in response to a
+2. If `XRootD`_ returns an error to the Qserv master in response to a
    write, Qserv immediately terminates the query gracefully and returns
    an error to the user. This has been demonstrated. Note that this may
    be considered acceptable behavior (as opposed to attempting to
    recover from the error) since it is an unlikely failure-mode.
 
-3. If XRootD returns an error to the Qserv master in response to a
+3. If `XRootD`_ returns an error to the Qserv master in response to a
    request to open for read, Qserv will attempt to recover by
    re-initializing the associated chunk query in preparation for a
    subsequent write. This is considered the most likely manifestation of
    worker failure and has been successfully demonstrated on a
    single-node, multi-worker process setup.
 
-4. If XRootD returns an error to the Qserv master in response to a read,
+4. If `XRootD`_ returns an error to the Qserv master in response to a read,
    Qserv immediately terminates the query gracefully and returns an
    error to the user. This has been demonstrated. Note that this may be
    considered acceptable behavior (as opposed to attempting to recover
@@ -4461,8 +4450,8 @@ Data corruption
 These tests are meant to simulate data corruption that might occur on
 disk, during disk I/O, or during communication over the network. We
 simulate these scenarios in one of two ways. 1) Truncate data read via
-XRootD by the Qserv master to an arbitrary length. 2) Randomly choose a
-single byte within a data stream read via XRootD and change it to a
+`XRootD`_ by the Qserv master to an arbitrary length. 2) Randomly choose a
+single byte within a data stream read via `XRootD`_ and change it to a
 random value. The first test necessarily triggers an exception within
 Qserv. Qserv responds by gracefully terminating the query and returning
 an error message to the user indicating the point of failure (e.g.
@@ -4502,194 +4491,161 @@ would prevent us from running multiple instances on a single machine.
 References
 ==========
 
-1. *LSST Data Management Storage Sizing and I/O Model*, Docushare
-   LDM-141 (spreadsheet) and LDM-139 (explanation)
+.. [LDM-141] *LSST Data Management Storage Sizing and I/O Model*, Docushare
+   `LDM-141 (spreadsheet) <http://ls.st/ldm-141>`_
+   and `LDM-139 (explanation) <http://ls.lst/ldm-139>`_.
 
-2. XRootD, http://xrootd.slac.stanford.edu
+.. [common-queries] *Common User Queries,*
+   http://dev.lsstcorp.org/trac/wiki/dbQueries
 
-3. Common User Queries, http://dev.lsstcorp.org/trac/wiki/dbQueries
-
-4. XLDB website: http://xldb.org
-
-5. XLDB event series: http://xldb.org/events
-
-6. *MapReduce: Simplified Data Processing on Large Clusters –
+.. [Dean04] *MapReduce: Simplified Data Processing on Large Clusters –
    Google*, Jeffrey Dean, Sanjay Ghemawat, OSDI'04
 
-7. *Bigtable: A Distributed Storage System for Structured Data*,
+.. [Bigtable06] *Bigtable: A Distributed Storage System for Structured Data*,
    http://labs.google.com/papers/bigtable-osdi06.pdf
 
-8. *Google Chubby*: http://labs.google.com/papers/chubby.html
+.. [Chubby] *Google Chubby*: http://labs.google.com/papers/chubby.html
 
-9. *Interpreting the Data: Parallel Analysis with Sawzall*, Rob
-Pike, Sean Dorward, Robert Griesemer, Sean Quinlan, Scientific
-Programming Journal
+.. [Pike] *Interpreting the Data: Parallel Analysis with Sawzall*, Rob
+   Pike, Sean Dorward, Robert Griesemer, Sean Quinlan, Scientific
+   Programming Journal
 
-10. *Dremel: Interactive Analysis of Web-Scale Datasets*.
-    http://research.google.com/pubs/archive/36632.pdf
+.. [Dremel] *Dremel: Interactive Analysis of Web-Scale Datasets*.
+   http://research.google.com/pubs/archive/36632.pdf
 
-11. *Tenzing: A SQL Implementation On the MapReduce Framework*,
-    Bishwapesh Chattopadhyay at al, to be released at VLDB 2011
+.. [Greenplum] http://www.greenplum.com/resources/mapreduce/
 
-12. http://pressroom.yahoo.net/pr/ycorp/yahoo-and-benchmark-capital-introduce-hortonworks.aspx
+.. [Chattopadhyay11] *Tenzing: A SQL Implementation On the MapReduce Framework*,
+   Bishwapesh Chattopadhyay at al, to be released at VLDB 2011
 
-13. http://www.hortonworks.com/
+.. [Yahoo] http://pressroom.yahoo.net/pr/ycorp/yahoo-and-benchmark-capital-introduce-hortonworks.aspx
 
-14. http://hadapt.com
+.. [Szalay08] Szalay, A., Bell, B., Vandenberg, J., Wonders, A., Burns, R., Fay,
+   D., Heasley, J, Hey, T., Nieto-Santisteban, M., Thakar, A.,
+   Catharine van Ingen, Wilton, R., GrayWulf: *Scalable Clustered
+   Architecture for Data Intensive Computing*, Microsoft Technical
+   Report MSR-TR-2008-187, 2008.
 
-15. http://dev.lsstcorp.org/trac/wiki/dbHiveExperiment
+.. [Simmhan09] Simmhan, Y., Barga, R., Catharine van Ingen, Nieto-Santisteban, M.,
+   Dobos, L., Li, N., Shipway, M., Szalay, A., Werner, S., Heasley, J.,
+   *GrayWulf: Scalable Software Architecture for Data Intensive
+   Computing*, Hawaii International Conference on System Sciences, pp.
+   1-10, 42nd Hawaii International Conference on System Sciences, 2009.
 
-16. Szalay, A., Bell, B., Vandenberg, J., Wonders, A., Burns, R., Fay,
-    D., Heasley, J, Hey, T., Nieto-Santisteban, M., Thakar, A.,
-    Catharine van Ingen, Wilton, R., GrayWulf: *Scalable Clustered
-    Architecture for Data Intensive Computing*, Microsoft Technical
-    Report MSR-TR-2008-187, 2008.
+.. [Jedicke06] Jedicke R., Magnier E. A., Kaiser N., Chambers K. C. *The next
+   decade of Solar System discovery with Pan-STARRS*. In *Proceedings
+   of the International Astronomical Union,* pp 341-352, 2006
 
-17. Simmhan, Y., Barga, R., Catharine van Ingen, Nieto-Santisteban, M.,
-    Dobos, L., Li, N., Shipway, M., Szalay, A., Werner, S., Heasley, J.,
-    GrayWulf: S\ *calable Software Architecture for Data Intensive
-    Computing*, Hawaii International Conference on System Sciences, pp.
-    1-10, 42nd Hawaii International Conference on System Sciences, 2009.
+.. [Gray07] Gray J., Nieto-Santisteban M., Szalay A., *The Zones Algorithm for
+   Finding Points-Near-a-Point or Cross-Matching Spatial Datasets*,
+   Microsoft Technical Report MSR TR 2006 52, 2007
 
-18. Jedicke R., Magnier E. A., Kaiser N., Chambers K. C. *The next
-    decade of Solar System discovery with Pan-STARRS*. In *Proceedings
-    of the International Astronomical Union,* pp 341-352, 2006
+.. [dbms209] *eBay's two enormous data warehouses*.
+   http://www.dbms2.com/2009/04/30/ebays-two-enormous-data-warehouses/
 
-19. Gray J., Nieto-Santisteban M., Szalay A., *The Zones Algorithm for
-    Finding Points-Near-a-Point or Cross-Matching Spatial Datasets*,
-    Microsoft Technical Report MSR TR 2006 52, 2007
+.. [dbms210] *eBay followup — Greenplum out, Teradata > 10 petabytes, Hadoop has some value, and more* 
+   http://www.dbms2.com/2010/10/06/ebay-followup-greenplum-out-teradata-10-petabytes-hadoop-has-some-value-and-more/
 
-20. *eBay's two enormous data warehouses*.
-    http://www.dbms2.com/2009/04/30/ebays-two-enormous-data-warehouses/
+.. [eweek04] *At Wal-Mart, Worlds Largest Retail Data Warehouse Gets Even Larger*
+   http://www.eweek.com/c/a/Enterprise-Applications/At-WalMart-Worlds-Largest-Retail-Data-Warehouse-Gets-Even-Larger/
 
-21. http://www.dbms2.com/2010/10/06/ebay-followup-greenplum-out-teradata-10-petabytes-hadoop-has-some-value-and-more/
+.. [scidb] *History of SciDB*, http://www.scidb.org/about/history.php
 
-22. http://www.eweek.com/c/a/Enterprise-Applications/At-WalMart-Worlds-Largest-Retail-Data-Warehouse-Gets-Even-Larger/
+.. [Becla05] *Lessons Learned from Managing a Petabyte*, Jacek Becla, Daniel
+   Wang, CIDR Conference, Asilomar, CA, USA, January 2005
 
-23. *History of SciDB*, http://www.scidb.org/about/history.php
+.. [Intersystems13] *European Space Agency Chooses InterSystems CACHE Database,*
+   http://www.intersystems.com/casestudies/cache/esa.html
 
-24. *Lessons Learned from Managing a Petabyte*, Jacek Becla, Daniel
-    Wang, CIDR Conference, Asilomar, CA, USA, January 2005
+.. [ODBMS11] *Object in Space*,
+   http://www.odbms.org/blog/2011/02/objects-in-space/
 
-25. European Space Agency Chooses InterSystems CACHE Database,
-    http://www.intersystems.com/casestudies/cache/esa.html
+.. [Stonebaker05] *C-store: a column-oriented DBMS ,* Stonebraker, M., Abadi, D.  J.,
+   Batkin, A., Chen, X., Cherniack, M., Ferreira, M., Lau, E., Lin, A.,
+   Madden, S., O'Neil, E., O'Neil, P., Rasin, A., Tran, N., and Zdonik,
+   S. In *Proceedings of the 31st international Conference on Very
+   Large Data Bases* (Trondheim, Norway, August 30 - September 02,
+   2005). Very Large Data Bases. VLDB Endowment, 553-564., 2005
 
-26. *Object in Space*,
-    http://www.odbms.org/blog/2011/02/objects-in-space/
+.. [Pavlo09] *A Comparison of Approaches to Large-Scale Data Analysis,* A.
+   Pavlo, E. Paulson, A. Rasin, D. J. Abadi, D. J. Dewitt, S. Madden,
+   and M. Stonebraker. In SIGMOD '09: Proceedings of the 2009 ACM
+   SIGMOD International Conference, 2009
 
-27. *C-store: a column-oriented DBMS ,* Stonebraker, M., Abadi, D.  J.,
-    Batkin, A., Chen, X., Cherniack, M., Ferreira, M., Lau, E., Lin, A.,
-    Madden, S., O'Neil, E., O'Neil, P., Rasin, A., Tran, N., and Zdonik,
-    S. In *Proceedings of the 31st international Conference on Very
-    Large Data Bases* (Trondheim, Norway, August 30 - September 02,
-    2005). Very Large Data Bases. VLDB Endowment, 553-564., 2005
+.. [Docushare-11701] Solid state disks tests, Docushare Document-11701
 
-28. http://en.wikipedia.org/wiki/Column-oriented\_DBMS
+.. [Docushare-7025] *DM Risk Register*, Docushare Document-7025, latest
+   version at https://www.lsstcorp.org/sweeneyroot/riskmanagement/risks_01.php
 
-29. *A Comparison of Approaches to Large-Scale Data Analysis,* A.
-    Pavlo, E. Paulson, A. Rasin, D. J. Abadi, D. J. Dewitt, S. Madden,
-    and M. Stonebraker. In SIGMOD '09: Proceedings of the 2009 ACM
-    SIGMOD International Conference, 2009
+.. [perftests] *Query Set for Performance Tests*,
+   http://dev.lsstcorp.org/trac/wiki/dbQueriesForPerfTest
 
-30. Solid state disks tests, Docushare Document-11701
+.. [LDM-144] *LSST Data Management Infrastructure Costing*, Docushare
+   `LDM-144 (spreadsheet) <http://ls.st/ldm-144>`_
+   `and LDM-143 (explanation) <http://ls.st/ldm-144>`_.
 
-31. DM Risk Register*, Docushare Document-7025, latest version at
-    https://www.lsstcorp.org/sweeneyroot/riskmanagement/risks\_01.php
+.. [Kunszt] *The Hierarchical Triangular Mesh*, Peter Kunszt, Alexander Szalay,
+   Aniruddha Thakar
 
-32. *Query Set for Performance Tests*,
-    http://dev.lsstcorp.org/trac/wiki/dbQueriesForPerfTest
+.. [databasecolumn] *Mapreduce: a major step back,*
+   http://www.databasecolumn.com/2008/01/mapreduce-a-major-step-back.html,
+   http://www.databasecolumn.com/2008/01/mapreduce-continued.html.
 
-33. *LSST Data Management Infrastructure Costing*, Docushare LDM-144
-    (spreadsheet) and LDM-143 (explanation)
+.. [hadoop-users] Hadoop users: http://wiki.apache.org/hadoop/PoweredBy
 
-34. *The Hierarchical Triangular Mesh*, Peter Kunszt, Alexander Szalay,
-    Aniruddha Thakar
+.. [nosqlpedia] http://nosqlpedia.com/wiki/Facebook\_Messaging\_-\_HBase\_Comes\_of\_Age
 
-35. http://wiki.apache.org/hadoop/HadoopIsNot
+.. [Dryad07] *Distributed Data-Paralle Programs from Sequential Building
+   Blocks*,
+   http://research.microsoft.com/en-us/projects/dryad/eurosys07.pdf
 
-36. *Mapreduce: a major step back,*
-    http://www.databasecolumn.com/2008/01/mapreduce-a-major-step-back.html,
-    http://www.databasecolumn.com/2008/01/mapreduce-continued.html
+.. 50. http://www.emc.com/about/news/press/2010/20100706-01.htm
 
-37. Hadoop users: http://wiki.apache.org/hadoop/PoweredBy
+.. [Calpont08] http://www.mysqlconf.com/mysql2009/public/schedule/detail/8997
 
-38. http://wiki.apache.org/hadoop/Hive
-
-39. HBase website: http://hadoop.apache.org/hbase/
-
-40. http://nosqlpedia.com/wiki/Facebook\_Messaging\_-\_HBase\_Comes\_of\_Age
-
-41. Zookeeper website: http://zookeeper.sourceforge.net/
-
-42. Dryad website: http://research.microsoft.com/en-us/projects/dryad/
-
-43. *Dryad: Distributed Data-Paralle Programs from Sequential Building
-    Blocks*,
-    http://research.microsoft.com/en-us/projects/dryad/eurosys07.pdf
-
-44. Microsoft Cosmos file system: http://www.goland.org/whatiscosmos/
-
-45. http://www.quora.com/How-will-Dremel-change-future-Hadoop-releases
-
-46. http://cassandra.apache.org/
-
-47. http://www.mongodb.org/
-
-48. http://drizzle.org/
-
-49. http://www.greenplum.com/resources/mapreduce/
-
-50. http://www.emc.com/about/news/press/2010/20100706-01.htm
-
-51. http://www.mysqlconf.com/mysql2009/public/schedule/detail/8997
-
-52. Calpont Launches Open Source Analytics Database Offering,
+.. [Calpont09] Calpont Launches Open Source Analytics Database Offering,
     http://www.calpont.com/pr/95-calpont-launches-open-source-analytics-database-offering
 
-53. *Skype Plans for PostgreSQL to scale to 1 billion users*,
-    http://highscalability.com/skype-plans-postgresql-scale-1-billion-users
+.. [HighScalability08] *Skype Plans for PostgreSQL to scale to 1 billion users*,
+   http://highscalability.com/skype-plans-postgresql-scale-1-billion-users
 
-54. http://postgis.refractions.net/
+.. [PostGIS] http://postgis.refractions.net/
 
-55. Sybase IQ: http://www.sybase.com/products/datawarehousing/sybaseiq
+.. [Vertica] *Using Vertica as a Structured Data Repositories for Apache Hadoop*,
+   http://www.vertica.com/MapReduce
 
-56. *Using Vertica as a Structured Data Repositories for Apache Hadoop*,
-    http://www.vertica.com/MapReduce
+.. [slac-test] *100-node scalability test run at SLAC*,
+   http://dev.lsstcorp.org/trac/wiki/dbQservTesting
 
-57. Gearman website: http://gearman.org/
+.. [Cache] *Using Caché's Globals,*
+   http://docs.intersystems.com/documentation/cache/20082/pdfs/GGBL.pdf
 
-58. 100-node scalability test run at SLAC,
-    http://dev.lsstcorp.org/trac/wiki/dbQservTesting
+.. [Becla07] Organizing the Extremely Large LSST Database for Real-Time
+   Astronomical Processing, J. Becla, K-T Lim, S. Monkewitz, M.
+   Nieto-Santisteban, A. Thakar, Astronomical Data Analysis Software &
+   Systems XVII, London, UK, September 2007
 
-59. Using Caché's Globals,
-    http://docs.intersystems.com/documentation/cache/20082/pdfs/GGBL.pdf
+.. [TokuDB] *TokuDB: Scalable High Performance for MySQL and MariaDB Databases*,
+   http://www.tokutek.com/wp-content/uploads/2013/04/Tokutek-White-Paper.pdf
 
-60. Organizing the Extremely Large LSST Database for Real-Time
-    Astronomical Processing, J. Becla, K-T Lim, S. Monkewitz, M.
-    Nieto-Santisteban, A. Thakar, Astronomical Data Analysis Software &
-    Systems XVII, London, UK, September 2007
+.. [CitusDB] *Overview of CitusDB*, http://www.citusdata.com/docs
 
-61. *TokuDB: Scalable High Performance for MySQL and MariaDB Databases*,
-    http://www.tokutek.com/wp-content/uploads/2013/04/Tokutek-White-Paper.pdf
+.. 63. *Oracle Further Commercializes MySQL Database*, PCWorld,
+..     http://www.pcworld.com/article/240151/oracle\_further\_commercializes\_mysql\_database.html
 
-62. *Overview of CitusDB*, http://www.citusdata.com/docs
+.. [Ulin13] *Driving MySQL Innovation*, Tom Ulin, Oracle,
+   http://www.percona.com/live/mysql-conference-2013/sessions/keynote-driving-mysql-innovation
 
-63. *Oracle Further Commercializes MySQL Database*, PCWorld,
-    http://www.pcworld.com/article/240151/oracle\_further\_commercializes\_mysql\_database.html
+.. [Actian] *Ingres Becomes Actian to Take Action on Big Data*,
+   http://www.actian.com/ingres-becomes-actian
 
-64. *Driving MySQL Innovation*, Tom Ulin, Oracle,
-    http://www.percona.com/live/mysql-conference-2013/sessions/keynote-driving-mysql-innovation
+.. [Zdnet] *Microsoft drops `Dryad`_; puts its big-data bets on Hadoop**,
+   http://www.zdnet.com/blog/microsoft/microsoft-drops-dryad-puts-its-big-data-bets-on-hadoop/11226
 
-65. *Ingres Becomes Actian to Take Action on Big Data*,
-    http://www.actian.com/ingres-becomes-actian
-
-66. *Microsoft drops Dryad; puts its big-data bets on Hadoop**,
-    http://www.zdnet.com/blog/microsoft/microsoft-drops-dryad-puts-its-big-data-bets-on-hadoop/11226
-
-67. *TOUCH: In-Memory Spatial Join by Hierarchical Data-Oriented
-    Partitioning*, Sadegh Nobari, Farhan Tauheed, Thomas Heinis,
-    Panagiotis Karras, Stéphane Bressan, Anastasia Ailamaki, SIGMOD,
-    2013
+.. [Nobari13] *TOUCH: In-Memory Spatial Join by Hierarchical Data-Oriented
+   Partitioning*, Sadegh Nobari, Farhan Tauheed, Thomas Heinis,
+   Panagiotis Karras, Stéphane Bressan, Anastasia Ailamaki, SIGMOD,
+   2013
 
 .. _mr-solutions:
 
@@ -4702,16 +4658,16 @@ Hadoop
 ------
 
 Hadoop is a Lucene sub-project hosted by Apache. It is open source. It
-tries to re-create the Google MR technology [6] to provide a framework
-in which parallel searches/projections/transformations (the *Map* phase)
-and aggregations/groupings/sorts/joins (the Reduce phase) using
-key-value pairs can be reliably performed over extremely large amounts
-of data. The framework is written in Java though the actual tasks
-executing the map and reduce phases can be written in any language as
-these are scheduled external jobs. The framework is currently supported
-for GNU/Linux platforms though there is on-going work for Windows
-support. It requires that ssh be uniformly available in order to provide
-daemon control.
+tries to re-create the Google MR technology [Dean04]_ to provide a
+framework in which parallel searches/projections/transformations (the
+*Map* phase) and aggregations/groupings/sorts/joins (the Reduce phase)
+using key-value pairs can be reliably performed over extremely large
+amounts of data. The framework is written in Java though the actual
+tasks executing the map and reduce phases can be written in any language
+as these are scheduled external jobs. The framework is currently
+supported for GNU/Linux platforms though there is on-going work for
+Windows support. It requires that ssh be uniformly available in order to
+provide daemon control.
 
 Hadoop consists of over 550 Java classes implementing multiple
 components used in the framework:
@@ -4786,16 +4742,18 @@ involved.
 
 Lack of some features that are at the core of every database system
 should not be a surprise – MR systems are simply built with different
-needs in mind, and even the Hadoop website officially states that
-*Hadoop is not a substitute for a database* [35]. Nethertheless, many
-have attempted to compare Hadoop performance with databases. According
-to some publications and feedback from Hadoop users we talked to, Hadoop
-is about an order of magnitude more wasteful of hardware than a e.g. DB2
-[36].
+needs in mind, and even `the Hadoop website officially states that
+*Hadoop is not a substitute for a database*
+<http://wiki.apache.org/hadoop/HadoopIsNot>`_. Nethertheless, many have
+attempted to compare Hadoop performance with databases. According to
+some publications and feedback from Hadoop users we talked to, Hadoop is
+about an order of magnitude more wasteful of hardware than a e.g. DB2
+[databasecolumn]_.
 
 Hadoop has a large community supporting it; e.g., over 300 people
 attended the first Hadoop summit (in 2008). It is used in production by
-many organizations, including Facebook, Yahoo!, and Amazon Facebook [37]
+many organizations, including Facebook, Yahoo!, and Amazon Facebook
+[hadoop-users]_.
 It is also commercially supported by Cloudera. Hadoop Summit 2011 was
 attended by more than 1,600 people from more than 400 companies.
 
@@ -4810,10 +4768,10 @@ Cloudera team in September of 2010.
 Hive
 ----
 
-Hive [38] is a data warehouse infrastructure developed by Facebook on
+`Hive`_ is a data warehouse infrastructure developed by Facebook on
 top of Hadoop; it puts structures on the data, and defines SQL-like
 query language. It inherits Hadoop's deficiencies including high latency
-and expensive joins. Hive works on static data, it particular it can't
+and expensive joins. `Hive`_ works on static data, it particular it can't
 deal with changing data, as row-level updates are not supported.
 Although it does support some database features, it is a “state where
 databases were ~1980: there are almost no optimizations” (based on
@@ -4827,13 +4785,13 @@ layer).
 HBase
 -----
 
-HBase [39] is a column-oriented structured storage modeled after
-Google's Bigtable [7], and built on top of the Hadoop HDFS. It is good
+`HBase`_ is a column-oriented structured storage modeled after Google's
+Bigtable [Bigtable06]_, and built on top of the Hadoop HDFS. It is good
 at incremental updates and column key lookups, however, similarly to
 plain MR, it offers no mechanism to do joins – a typical solution used
-by most users is to denormalize data. HBase is becoming increasingly
-more popular at Facebook [40]. It is supported commercially by Cloudera,
-Datameer and Hadapt.
+by most users is to denormalize data. `HBase`_ is becoming increasingly
+more popular at Facebook [nosqlpedia]_. It is supported commercially by
+Cloudera, Datameer and `Hadapt`_.
 
 .. _mr-pig-latin:
 
@@ -4854,17 +4812,17 @@ developer of Pig Latin – Chris Olston.
 Other Hadoop-related Systems
 ----------------------------
 
-Other systems build for Hadoop include Zookeeper [41] – a service for
-coordinating Hadoop's processes (ala Google's Chubby [8]) , and Simon –
-a cluster and application monitoring tool. Simon is similar to Ganglia,
-except it has more/better aggregation.
+Other systems build for Hadoop include `Zookeeper`_ – a service for
+coordinating Hadoop's processes (ala Google's Chubby [Chubby]_) , and
+Simon – a cluster and application monitoring tool. Simon is similar to
+Ganglia, except it has more/better aggregation.
 
 .. _mr-dryad:
 
 Dryad
 -----
 
-Dryad [42, 43] is a system developed by Microsoft Research for executing
+`Dryad`_ [Dryad07]_ is a system developed by Microsoft Research for executing
 distributed computations. It supports a more general computation model
 than MR in that it can execute graphs of operations, using so called
 Directed Acyclic Graph (DAG). It is somewhat analogous to the MR model
@@ -4874,43 +4832,44 @@ graph execution is optimized to take advantage of data locality if
 possible, with computation moving to the data. If non-local data is
 needed, it is transferred over the network.
 
-Dryad currently works on flat files. It is similar to Hadoop in this
+`Dryad`_ currently works on flat files. It is similar to Hadoop in this
 way.
 
-The core execution engine in Dryad has been used in production for
+The core execution engine in `Dryad`_ has been used in production for
 several years but not heavily. There are several integration pieces we
 might want (loading data from databases instead of files, tracking
 replicas of data) that do not yet exist.
 
-Beyond the execution engine, Dryad also incorporates a simple per-node
+Beyond the execution engine, `Dryad`_ also incorporates a simple per-node
 task scheduler inherited from elsewhere in Microsoft. It runs
-prioritized jobs from a queue. Dryad places tasks on nodes based on the
+prioritized jobs from a queue. `Dryad`_ places tasks on nodes based on the
 data available on the node and the state of the task queue on the node.
 A centralized scheduler might improve things, particularly when multiple
 simultaneous jobs are running; that is an area that is being
 investigated.
 
-Dryad requires that the localization or partitioning of data be exposed
+`Dryad`_ requires that the localization or partitioning of data be exposed
 to it. It uses a relatively generic interface to obtain this metadata
 from an underlying filesystem, enabling it to talk to either a
 proprietary GFS-like filesystem or local disks.
 
-Dryad runs only on Windows .NET at present. Building the system outside
+`Dryad`_ runs only on Windows .NET at present. Building the system outside
 of Microsoft is difficult because of dependencies on internal libraries;
 this situation is similar to the one with Google's GFS and Map/Reduce.
 The core execution engine could conceivably be implemented within Hadoop
 or another system, as its logic is not supposed to be terribly
 complicated. The performance-critical aspect of the system is the
 transfer of data between nodes, a task that Windows and Unix filesystems
-have not been optimized for and which Dryad therefore provides.
+have not been optimized for and which `Dryad`_ therefore provides.
 
-Dryad has been released as open source to academics/researchers in July
-2009. This release however does not include any distributed filesystem
-for use with the system. Internally, Microsoft uses the Cosmos file
-system [44], but it is not available in the academic release. Instead
-there are bindings for NTFS and SQL Server.
+`Dryad`_ has been released as open source to academics/researchers in
+July 2009. This release however does not include any distributed
+filesystem for use with the system. Internally, Microsoft uses the
+`Cosmos file system <http://www.goland.org/whatiscosmos/>`_, but it is
+not available in the academic release. Instead there are bindings for
+NTFS and SQL Server.
 
-Microsoft dropped supporting Dryad back in late 2011 [66]
+Microsoft dropped supporting `Dryad`_ back in late 2011 [Zdnet]_.
 
 .. _mr-dremel:
 
@@ -4918,24 +4877,24 @@ Dremel
 ------
 
 Dremel is a scalable, interactive ad-hoc query system for analysis of
-read-only data, implemented as an internal project at Google [10].
+read-only data, implemented as an internal project at Google [Dremel]_.
 Information about Dremel has been made available in July 2010. Dremel's
 architecture is in many ways similar to our baseline architecture
 (executing query in parallel on many nodes in shared nothing
 architecture, auto fail over, replicating hot spots). Having said that,
 we do not have access to the source code, even though Google is an LSST
-collaborator, and there is no corresponding open source alternative to
-date [45].
+collaborator, and there is `no corresponding open source alternative to
+date <http://www.quora.com/How-will-Dremel-change-future-Hadoop-releases>`_.
 
 .. _mr-tenzing:
 
 Tenzing
 -------
 
-Tenzing is an SQL implementation on the MapReduce Framework [11] We
-managed to obtain access to pre-published paper from Google through our
-XLDB channels several months before planned publication at the VLDB 2011
-conference.
+Tenzing is an SQL implementation on the MapReduce Framework
+[Chattopadhyay11]_ We managed to obtain access to pre-published paper
+from Google through our `XLDB`_ channels several months before planned
+publication at the VLDB 2011 conference.
 
 Tenzing is a query engine built on top of MR for ad hoc analysis of
 Google data. It supports a mostly complete SQL implementation (with
@@ -4957,7 +4916,7 @@ expose SQL interface to the user, and it recently evolved and refers to
 structured systems such as key-value stores or document stores. These
 systems tend to provide high availability at the cost of relaxed
 consistency (“eventual” consistency). Today's key players include
-Cassandra [46] and MongoDB [46].
+`Cassandra`_ and `MongoDB`_.
 
 While a key/value store might come handy in several places in LSST,
 these systems do not address many key needs of the project. Still, a
@@ -4972,18 +4931,18 @@ Appendix B – Database Solutions
 
 In alphabetical order.
 
-.. _actian:
+.. _sec-actian:
 
 Actian
 ------
 
-Actian, formerly known as Ingres [65] provides analytical services
+Actian, formerly known as Ingres [Actian]_ provides analytical services
 through Vectorwise, acquired from CWI in 2010. Primary speed ups rely on
 exploiting data level parallelism (rather than tuple-at-a-time
 processing). Main disadvantage from LSST perspective: it is a
 single-node system.
 
-.. _cache:
+.. _sec-cache:
 
 Caché
 -----
@@ -5002,16 +4961,16 @@ their system does not support compression and stores data in strings,
 which may not be efficient for LSST catalog data.
 
 A large fraction of the code is already available as open source for
-academia and non-profit organizations under the name “Globals” [59].
+academia and non-profit organizations under the name “Globals” [Cache]_.
 
-.. _citrusdb:
+.. _sec-citrusdb:
 
 CitusDB
 -------
 
 CitusDB is a new commercial distributed database built on top on
 PostgreSQL. It supports joins between one large and multiple small
-tables [62] (star schema) – this is insufficient for LSST.
+tables [CitusDB]_ (star schema) – this is insufficient for LSST.
 
 .. _db2:
 
@@ -5026,34 +4985,34 @@ unstructured data (XML), not large scale analytics. All their majors
 projects announced in the last few years seem to confirm them, including
 Viper, Viper2 and Cobra (XML) and pureScale (OLTP).
 
-.. _drizzle:
+.. _db-drizzle:
 
 Drizzle
 -------
 
-Drizzle [48] is a fork from the MySQL Database, the fork was done
+`Drizzle`_ is a fork from the MySQL Database, the fork was done
 shortly after the announcement of the acquisition of MySQL by Oracle
-(April 2008). Drizzle is lighter than MySQL: most advanced features such
+(April 2008). `Drizzle`_ is lighter than MySQL: most advanced features such
 as partitioning, triggers and many others have been removed (the code
 base was trimmed from over a million lines down to some 300K, it has
-also been well modularized). Drizzle's main focus is on the cloud
+also been well modularized). `Drizzle`_'s main focus is on the cloud
 market. It runs on a single server, and there are no plans to implement
 shared-nothing architecture. To achieve shared-nothing architecture,
-Drizzle has hooks for an opaque sharding key to be passed through
+`Drizzle`_ has hooks for an opaque sharding key to be passed through
 client, proxy, server, and storage layers, but this feature is still
 under development, and might be limited to hash-based sharding.
 
-Default engine is InnoDB. MyISAM engine is not part of Drizzle, it is
+Default engine is InnoDB. MyISAM engine is not part of `Drizzle`_, it is
 likely MariaDB engine will become a replacement for MyISAM.
 
-Drizzle’s first GA release occurred in March 2011.
+`Drizzle`_\ ’s first GA release occurred in March 2011.
 
-We have discussed the details of Drizzle with key Drizzle architects and
+We have discussed the details of `Drizzle`_ with key `Drizzle`_ architects and
 developers, including Brian Aker (the chief architect), and most
-developers and users present at the Drizzle developers meeting in April
+developers and users present at the `Drizzle`_ developers meeting in April
 2008.
 
-.. _greenplum:
+.. _sec-greenplum:
 
 Greenplum
 ---------
@@ -5069,12 +5028,12 @@ allegedly there are some issues with it.
 
 Up until recently, Greenplum powered one of the largest (if not the
 largest) database setups: eBay was using it to manage 6.5 petabytes of
-data on a 96-node cluster [20]. We are in close contact with the key
-eBay developers of this system, including Oliver Ratzesberger.
+data on a 96-node cluster [dbms209]_. We are in close contact with the
+key eBay developers of this system, including Oliver Ratzesberger.
 
 We are in contact with the Greenplum CTO: Luke Lonergan.
 
-08/28/2008: Greenplum announced supporting MapReduce [49]
+08/28/2008: Greenplum announced supporting MapReduce [Greenplum]_.
 
 Acquired by EMC in July 2010.
 
@@ -5174,17 +5133,17 @@ InfiniDB
 
 InfiniDB is an open source, columnar DBMS consisting of a MySQL front
 end and a columnar storage engine, build and supported by Calpont.
-Calpont introduced their system at the MySQL 2008 User Conference [51],
-and more officially announced it in late Oct 2009 [52]. It implements
-true MPP, shared nothing (or shared-all, depending how it is configured)
-DBMS. It allows data to be range-based horizontal partitioning,
-partitions can be distributed across many nodes (overlapping partitions
-are not supported though). It allows to run *distributed* scans, filter
-aggregations and hash joins, and offers both intra- and inter- server
-parallelism. During cross-server joins: no direct communication is
-needed between workers. Instead, they build 2 separate hash maps,
-distribute smaller one, or if too expensive to distribute they can put
-it on the “user” node.
+Calpont introduced their system at the MySQL 2008 User Conference
+[Calpont08]_, and more officially announced it in late Oct 2009
+[Calpont09]_. It implements true MPP, shared nothing (or shared-all,
+depending how it is configured) DBMS. It allows data to be range-based
+horizontal partitioning, partitions can be distributed across many nodes
+(overlapping partitions are not supported though). It allows to run
+*distributed* scans, filter aggregations and hash joins, and offers both
+intra- and inter- server parallelism. During cross-server joins: no
+direct communication is needed between workers. Instead, they build 2
+separate hash maps, distribute smaller one, or if too expensive to
+distribute they can put it on the “user” node.
 
 A single-server version of InfiniDB software is available through free
 community edition. Multi-node, MPP version of InfiniDB is only available
@@ -5243,7 +5202,7 @@ There are several notable open-source forks of MySQL:
   component of web companies and it is one of the components of the full
   stack of products they offer. Oracle has doubled the number of MySQL
   engineers and tripled the number of MySQL QA staff over the past year
-  [64], and the community seems to believe Oracle is truly committed now
+  [Ulin13]_, and the community seems to believe Oracle is truly committed now
   to support MySQL. The main “problem” from LSST perspective is that
   Oracle is putting all the effort into InnoDB engine only (the engine
   used by web companies including Facebook and Google), while the MyISAM
@@ -5262,9 +5221,9 @@ There are several notable open-source forks of MySQL:
 
 - Percona, which focuses on multi-core scaling
 
-- Drizzle, which is aslimmed-down version, rewriten from scratch and no
+- `Drizzle`_, which is aslimmed-down version, rewriten from scratch and no
   longer compatible with MySQL. Based on discussions with the users, the
-  Drizzle effort has not picked up, and is slowly dying.
+  `Drizzle`_ effort has not picked up, and is slowly dying.
 
 Spatial indexes / GIS. As of version 5.6.1, MySQL has rewritten spatial
 support, added support for spatial indexes (for MyISAM only) and
@@ -5316,19 +5275,19 @@ Infobright’s solution emphasizes single-node performance without
 discussing distributed operation (except for data ingestion in the
 enterprise edition).
 
-.. _tokudb:
+.. _sec-tokudb:
 
 TokuDB
 ~~~~~~
 
 Tokutek built a specialized engine, called TokuDB. The engine relies on
-new indexing method, called Fractal Tree indexes [61], this new type of
+new indexing method, called Fractal Tree indexes [TokuDB]_, this new type of
 an index primarily increases speed of inserts and data replication.
 While its benefits are not obvious for our data access center, rapid
 inserts might be useful for Level 1 data sets (Alert Production). We
 have been in touch with the Tokutek team for several years, the key
 designers of the Fractal Tree index gave a detailed tutorial at the
-XLDB-2012 conference we organized.
+`XLDB`_-2012 conference we organized.
 
 The engine was made open source in Apr 2013.
 
@@ -5420,10 +5379,10 @@ installation (as of late 2007). Skype is planning to use PostgreSQL to
 scale up to billions of users, by introducing a layer of proxy servers
 which will hash SQL requests to an appropriate PostgreSQL database
 server, but this is an OLTP usage that supports immense volumes of small
-queries [53].
+queries [HighScalability08]_.
 
-PostgreSQL also offers good GIS support [54]. We are collaborating with
-the main authors of this extension.
+PostgreSQL also offers good GIS support [PostGIS]_. We are collaborating
+with the main authors of this extension.
 
 One of the main weaknesses of PostgreSQL is a less-developed support
 system. The companies that provide support contracts are less
@@ -5469,7 +5428,7 @@ community believes this is unlikely to change in the near future. This
 is probably the main show-stopper preventing us from adapting
 PostgreSQL.
 
-.. _scidb:
+.. _sec-scidb:
 
 SciDB
 -----
@@ -5518,8 +5477,8 @@ speed interconnect(Infiniband).
 Sybase IQ
 ---------
 
-Sybase IQ [55] is a commercial columnar database product by Sybase Corp.
-Sybase IQ utilizes a “shared-everything” approach that designed to
+`Sybase IQ`_ is a commercial columnar database product by Sybase Corp.
+`Sybase IQ`_ utilizes a “shared-everything” approach that designed to
 provide graceful load-balancing. We heard opinions that most of the good
 talent has left the company; thus it is unlikely it will be a major
 database player.
@@ -5558,7 +5517,7 @@ table.
 
 In 2009, a Vertica Hadoop connector was implemented. This allows Hadoop
 developers to push down map operators to Vertica database, stream Reduce
-operations into Vertica [56], and move data between the two
+operations into Vertica [Vertica]_, and move data between the two
 environments.
 
 Cons:
@@ -5583,36 +5542,36 @@ Cluster and task and management
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Two primary candidates to use as cluster and task management we
-identified so far are Gearman and XRootD. Cluster management involves
+identified so far are Gearman and `XRootD`_. Cluster management involves
 keeping track of available nodes, allowing nodes to be added/removed
 dynamically. Task management involves executing tasks on the nodes.
 
 Detailed requirements what we need are captured at:
 http://dev.lsstcorp.org/trac/wiki/dbDistributedFrameworkRequirements
 
-.. _gearman:
+.. _sec-gearman:
 
 Gearman
 ^^^^^^^
 
-Gearman is a distributed job execution system, available as open source.
+`Gearman`_ is a distributed job execution system, available as open source.
 It provides task management functions, e.g., cluster management is left
 out to be handled in application code.
 
 During a meeting setup in June 2009 with Eric Day, the key developer
-working on integration of Drizzle with Gearman, who also wrote the C++
-version of Gearman, we discussed details of Gearman architecture and its
+working on integration of `Drizzle`_ with `Gearman`_, who also wrote the C++
+version of `Gearman`_, we discussed details of `Gearman`_ architecture and its
 applicability for LSST.
 
-Gearman manages workers as resources that provide RPC execution
+`Gearman`_ manages workers as resources that provide RPC execution
 capabilities. It is designed to provide scalable access to many
 resources that can provide similar functionality (e.g., compress an
 image, retrieve a file, perform some expensive computation). While we
-could imagine a scheme to use Gearman’s dispatch system, its design did
+could imagine a scheme to use `Gearman`_\ ’s dispatch system, its design did
 not match LSST’s needs well. One problem was its store-and-forward
 approach to arguments and results, which would mean that the query
 service would need to implement its own side transmission channel or
-potentially flood the Gearman coordinator with bulky results.
+potentially flood the `Gearman`_ coordinator with bulky results.
 
 .. _infinidb-tests:
 
@@ -6267,15 +6226,15 @@ Solution providers of considered products:
 - Map/Reduce – key developers from Google
 
 - Hadoop – key developers from Yahoo!, founders and key developers
-  behind Cloudera and Hortonworks, company=ies supporting enterprise
+  behind Cloudera and `Hortonworks`_, companyies supporting enterprise
   edition of Hadoop
 
-- Hive – key developers from Facebook.
+- `Hive`_ – key developers from Facebook.
 
-- Dryad – key developers from Microsoft (Dryad is Microsofts's version
+- `Dryad`_ – key developers from Microsoft (`Dryad`_ is Microsofts's version
   of map/reduce), including Michael Isard
 
-- Gearman – key developers (gearman is a system which allows to run
+- `Gearman`_ – key developers (gearman is a system which allows to run
   MySQL in a distributed fashion)
 
 - representatives from all major database vendors, including Teradata,
@@ -6352,3 +6311,29 @@ Change Record
 +-------------+------------+----------------------------------+-----------------+
 | 3.2         | 10/10/2013 | TCT approved                     | R Allsman       |
 +-------------+------------+----------------------------------+-----------------+
+
+.. _XRootD: http://xrootd.slac.stanford.edu
+
+.. _XLDB: http://xldb.org
+
+.. _Hortonworks: http://www.hortonworks.com/
+
+.. _Hadapt: http://hadapt.com
+
+.. _Hive: http://wiki.apache.org/hadoop/Hive
+
+.. _HBase: http://hadoop.apache.org/hbase/
+
+.. _Zookeeper: website: http://zookeeper.sourceforge.net/
+
+.. _Dryad: http://research.microsoft.com/en-us/projects/dryad/
+
+.. _Cassandra: http://cassandra.apache.org/
+
+.. _MongoDB: http://www.mongodb.org/
+
+.. _Drizzle: http://drizzle.org/
+
+.. _SybaseIQ: http://www.sybase.com/products/datawarehousing/sybaseiq
+
+.. _Gearman: http://gearman.org/
