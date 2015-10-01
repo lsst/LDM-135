@@ -1021,7 +1021,7 @@ these solutions attempt to add partial database-like features such as
 schema catalog, indexes, and transactions. The most recent MR
 developments at Google are Dremel [Dremel]_ - an interactive ad-hoc query
 system for analysis of read-only data, and Tenzing – a full SQL
-implementation on the MR Framework [Chattopadhyay11]. [#]_
+implementation on the MR Framework [Chattopadhyay11].\ [#]_
 
 .. [#] Through our `XLDB`_ efforts, Google has provided us with a
    preprint of a Tenzing manuscript accepted for publication at VLDB 2011.
@@ -2013,7 +2013,8 @@ risk registry:
 
 - DM-075: New SRD requirements require new DM functionality
 
-    **Risks Mitigations**
+Risks Mitigations
+-----------------
 
 To mitigate the insufficient performance/scalability risk, we developed
 Qserv, and demonstrated scalability and performance. In addition, to
@@ -2571,10 +2572,8 @@ At the moment we use xml-rpc as a message protocol to communicate with
 qms. It was a natural choice given that this protocol is already in use
 by Qserv master.
 
-.. _typical-data-flow:
-
 Typical Data Flow
------------------
+~~~~~~~~~~~~~~~~~
 
 Static metadata:
 
