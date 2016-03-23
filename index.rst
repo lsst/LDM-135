@@ -2410,17 +2410,67 @@ MIN(), and SUM(), and should support SQL92 level GROUP BY.
 Indexing
 --------
 
-The secondary index utilizes a table using the InnoDB storage engine to
-perform lookups on a database's key column (e.g., objectId). While the
-use of InnoDB might not provide significant lookup performance, we found
-that index creation was unbearably slow, if it could complete, using a 1
-billion row MyISAM table. Loading sorted rows into an InnoDB table was
-acceptable though not fast either. We are also considering a customized
-indexing system, in which lookups are performed directly on a linear
-index file with two index levels above. This scheme should be able to
-provide single-seek point and range lookups given an in-memory footprint
-of about 128MB for 64 billion rows, or a negligible in-memory footprint
-(<4KB) for two-seek lookups.
+The secondary index utilizes one or more tables using the InnoDB storage
+engine on each czar to perform lookups on the database's key colume
+(objectId).  Performance tests (Figure fig-indexing_tests_) on a single,
+dual-core host with 1 TB hard disk storage (not SSD) have shown that this
+configuration will support a full load of 40 billion rows in about 400,000
+seconds (110 hours).  A more realistic configuration with multiple cores and
+SSD storage is expected to meet the requirement of fully loading in less
+than 48 hours.
+
+.. _fig-indexing_tests:
+
+.. figure:: _static/indexing_tests.png
+   :alt: Performance tests of MySQL-based secondary index.
+
+   Performance tests of MySQL-based secondary index.
+
+To improve the performance of the InnoDB storage engine for queries, the
+secondary index may be split across a small number (dozens) of tables, each
+containing a contiguous range of keys.  This splitting, if done, will be
+independent of the partitioning of the database itself.  The contiguity of
+key ranges will allow the secondary index service to identify the
+appropriate split table arithmetically via an in-memory lookup.
+
+.. _index-structure:
+
+Secondary Index Structure
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The secondary index consists of three columns: the key (objectId), the
+chunk where all data with that key are located (chunkId), and the subchunk
+within that chunk where data with the key are located (subChunkId).  The
+objectId is assigned by the science pipelines as a 64-bit integer value; the
+chunkId and subChunkId are both 16-bit integers which identify spatial
+regions on the sky.
+
+.. _index-loading:
+
+Secondary Index Loading
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The InnoDB storage engine loads tables most efficiently if it is provided
+input data which has been presorted according to the table's primary key.
+When the secondary index information is collected for loading (from each
+worker node handling a collection of chunks), it is sorted by objectId, and
+may be divided into roughly equal "splits".  Each of those splits is loaded
+into a table *en masse*.
+
+.. The paragraph below is not as "directive" as the rest of the document.
+   Is it reasonable to keep?
+
+To fully optimize the loading and table splitting, the entire index should
+be collected from all workers and pre-sorted in memory on the czar.  This is
+not reasonable for 40 billion entries (requiring a minimum of 480 GB memory,
+plus overhead).  Instead, the index data from a single worker can be assumed
+to be a "representative sample" from the full range of objectIds, so table
+splitting can be done using the first worker's index data.  The remaining
+workers will be split and loaded according to those defined tables.
+
+.. If we keep the paragraph above, we need to run some performance tests to
+   verify that the workers really will carry "random" subsets of the full
+   dataset.
 
 .. _data-distribution:
 
