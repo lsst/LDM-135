@@ -2452,10 +2452,25 @@ Secondary Index Loading
 
 The InnoDB storage engine loads tables most efficiently if it is provided
 input data which has been presorted according to the table's primary key.
-When the secondary index information is collected for loading (from the
-worker nodes handling each chunk), it is sorted by objectId, and may be
-divided into roughly equal "splits".  Each of those splits is loaded into a
-table *en masse*.
+When the secondary index information is collected for loading (from each
+worker node handling a collection of chunks), it is sorted by objectId, and
+may be divided into roughly equal "splits".  Each of those splits is loaded
+into a table *en masse*.
+
+.. The paragraph below is not as "directive" as the rest of the document.
+   Is it reasonable to keep?
+
+To fully optimize the loading and table splitting, the entire index should
+be collected from all workers and pre-sorted in memory on the czar.  This is
+not reasonable for 40 billion entries (requiring a minimum of 480 GB memory,
+plus overhead).  Instead, the index data from a single worker can be assumed
+to be a "representative sample" from the full range of objectIds, so table
+splitting can be done using the first worker's index data.  The remaining
+workers will be split and loaded according to those defined tables.
+
+.. If we keep the paragraph above, we need to run some performance tests to
+   verify that the workers really will carry "random" subsets of the full
+   dataset.
 
 .. _data-distribution:
 
