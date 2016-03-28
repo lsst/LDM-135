@@ -615,6 +615,24 @@ data which is updated is small enough and will not require the scalable
 architecture – we plan to handle all Level 1 data set with out-of-the
 box MySQL as described in :ref:`alert-production`.
 
+.. _async-queries:
+
+Long-running queries
+~~~~~~~~~~~~~~~~~~~~
+
+Many of the typical user queries may need significant time to complete,
+at the scale of hours. To avoid re-submission of those long-running queries
+in case of various failures (networking or hardware issues) the system will
+support asynchronous query execution mode. In this mode users will submit
+queries using special options or syntax and the system will dispatch a
+query and immediately return to user some identifier of the submitted query
+without blocking user session. This query identifier will be used by user
+to retirieve query processing status, query result after query completes,
+or a partial query result while query is still executing.
+
+The system should be able to estimate the time which user query will need
+to complete and refuse to run long queries in a regular blocking mode.
+
 .. _tech-choice:
 
 Technology choice
@@ -667,7 +685,7 @@ and network bandwidth and I/O analyses, see [LDM-141]_.
 .. table:: Expected sizes for the largest database catalogs
 
    +---------------------+---------------+----------------------+-------------+--------------------------------------------------------------+
-   | *Table**            | **Size [TB]** | **Rows [billion]**   | **Columns** | **Description**                                              |
+   | **Table**           | **Size [TB]** | **Rows [billion]**   | **Columns** | **Description**                                              |
    +=====================+===============+======================+=============+==============================================================+
    | Object (narrow)     | ~107          | ~47                  | ~330        | Most heavily used, for all common queries on stars/galaxies, |
    |                     |               |                      |             | including spatial correlations and time series analysis      |
@@ -2533,15 +2551,88 @@ information about schema and partitioning for all Qserv-managed
 databases and tables needs to be tracked and kept consistent across the
 entire Qserv cluster.
 
+Implementation of the static metadata in Qserv is based on hierarchical
+key-value storage which uses a regular MySQL database as a storage backend.
+This database is shared between multiple masters and it must be served by a
+fault-taulerant MySQL server instance, e.g. using a master-master replication
+solution like MariaDB Galera cluster. Database consistency is critical for
+metadata and it should be implemented using one of the transactional
+database engines in MySQL.
+
+Static metadata may contain following information:
+
+- Per-database and per-table partitioning and scan scheduling parameters.
+
+- Table schema for each table, used to create database tables in all
+  worker and master instances; the schema in the master MySQL instance can
+  be used to obtain the same information when a table is already created.
+
+- Database and table state information, used primarily by the process of
+  database and table creation or deletion.
+
+- Definitions for the set of worker and master nodes in a cluster
+  including their availability status.
+
+The main clients of the static metadata are:
+
+- Administration tools (command-line utilities and modules) which allow
+  one to define or modify metadata structures.
+
+- Qserv master(s), mostly querying partitioning parameters but also allowed
+  to modify table/database status when deleting/creating new tables and
+  databases. Master(s) should not depend on node definitions in metadata,
+  the xrootd facility is used to communicate with workers.
+
+- Special "watcher" service which implements distributed process of
+  database and table management.
+
+- An initial implementation of the data loading application which will use
+  the node definitions and will create/update database and table definitions.
+  This initial implementation will eventually be replaced by a distributed
+  loading mechanism which may be based on separate mechanisms.
+
 .. _dynamic-metadata:
 
 Dynamic metadata
 ~~~~~~~~~~~~~~~~
 
-In addition to static metadata, Qserv also needs to track various
-statistics, most of them run-time information, critical for query
-optimization and system monitoring. Examples of such metadata include
-information for each active query and each chunk-query.
+In addition to static metadata, a Qserv cluster also needs to track its
+current state, and keep various statistics about query execution. This sort
+of data is udated frequently, several times per query execution, and is
+called dynamic metadata.
+
+Prototype implementation of the dynamic metadata is based on MySQL database.
+Like static metadata it needs to be shared between all master instances and
+will be served via a single fault-talerant MySQL instance which will be
+shared with static metadata database.
+
+Dynamic metadata will contain the following information:
+
+- Definition of every master instance in a Qserv cluster.
+
+- Record of every SELECT-type query processed by cluster. This record
+  includes query processing state and some statistical/timing information.
+
+- Per-query list of table names used by the asynchronous queries, this
+  information is used to delay table deletion while async queries are in
+  progress.
+
+- Per-query worker information, which includes chunk ID and identifying
+  information for the worker processing that chunk ID. This information will
+  be used to transparently restart the master or migrate query processing to
+  a different master in case of master failure.
+
+The most significant use of the dynamic metadata is to track execution of
+asyncronous queries. When an async query is submitted it is registered in
+dynamic metadata and its ID is returned to the user immediately. Later users
+can request status information for that query ID which is obtained from
+dynamic metadata. When query processing is finished users can request results
+from that query, and the master can obtain the location of the result data
+from dynamic metadata.
+
+Additionally dynamic metadata can be used to collect statistical information
+about queries that were executed in the past which may be an important tool
+in understanding and improving system performance.
 
 .. _architecture:
 
