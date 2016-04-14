@@ -2789,7 +2789,7 @@ rows, rather than some finite number (thousands or less).
 Implementation
 ~~~~~~~~~~~~~~
 
-The implementation of shared scans in Qserv is two parts. The first
+The implementation of shared scans in Qserv is in two parts. The first
 part is a basic classification of incoming queries as scanning queries
 or non-scanning queries. A query is considered to scan a table
 if it depends on non-indexed column values and involves more than *k*
@@ -2811,13 +2811,14 @@ maximize locality of access in data and time, and tries to lock the files
 associated with the tables in memory as much as possible. Using the
 identified scan tables and their ratings, the worker places them on the
 appropriate scheduler. There will be at least three schedulers. One for
-queries expected to be complete in under an hour, which are expected to
+queries expected to complete in under an hour, which are expected to
 be related to the Object table. One for queries expected to take less than
 eight hours, expected to be related to Object_Extra. And one for scans
-expected to take twelve hours for ForcedSource and/or Source tables. The
-reasoning being that a single slow query can impede the progress of a
-shared scan and all the other user queries on that scan. There may be a
-need for another scheduler to handle queries taking more than 12 hours.
+expected to take eight to twelve hours for ForcedSource and/or Source
+tables. The reasoning being that a single slow query can impede the
+progress of a shared scan and all the other user queries on that scan.
+There may be a need for another scheduler to handle queries taking more
+than 12 hours.
 
 Each scheduler places incoming chunk queries into one of two priority
 queues sorted by chunk id then scan rating of the individual tables. If
@@ -2827,9 +2828,9 @@ priority queue. After chunk id, the priority queue is sorted by the table
 with highest scan rating to ensure that the largest tables in the chunk
 are grouped together.
 
-The once the query is on the appropriate scheduler, the algorithm proceeds
+Once the query is on the appropriate scheduler, the algorithm proceeds
 as follows. When a dispatch slot is available, it checks the highest
-priority scheduler. If that scheduler has a query fragments, hereafter
+priority scheduler. If that scheduler has a query fragment, hereafter
 called tasks, and it is not at its quota limit, it is allowed to start its
 next task, otherwise the worker checks the next scheduler. It continues
 doing this until a task has been started or all the schedulers have been
@@ -2844,21 +2845,21 @@ that task. This should prevent any scheduler from hanging due to memory
 starvation without requiring complicated logic but could incur extra
 disk I/O. More on locking tables in memory later.
 
-Schedulers check for tasks by first checking the head of the active
+Schedulers check for tasks by first checking the top of the active
 priority queue. If the active priority queue is empty, and the pending
 priority queue is not, then the active and pending queues are swapped
 with the task being taken from the top of the “new” active queue.
 
 Since the queries are being run by a separate DBMS instance of which there
-is little control of how it goes about running queries. The worker can
-control when queries are sent to the DBMS and it can also lock files in
-memory. Files in memory are among the most likely items to be paged out
-when memory resources are low, which would increase disk I/O. Locking files
-in memory prevents this from happening. However, care must taken in choosing
-how much memory can used for locking files. Use too much and there will be a
-significant impact on DBMS performance. Set aside too little, and schedulers
-will not make optimum use of the resources available and may be forced to
-run tasks without actually locking the files in memory.
+is little control of how it goes about running queries, the worker can
+control when queries are sent to the DBMS and also lock files in memory.
+Files in memory are among the most likely items to be paged out when
+memory resources are low, which would increase disk I/O. Locking files in
+memory prevents this from happening. However, care must taken in choosing
+how much memory can be used for locking files. Use too much and there will
+be a significant impact on DBMS performance. Set aside too little, and
+schedulers will not make optimum use of the resources available and may be
+forced to run tasks without actually locking the files in memory.
 
 The memory manager controls which files are locked in memory. When a
 scheduler tries to run a task, the task asks the memory manager to lock all
@@ -2873,8 +2874,8 @@ that table is freed.
 When the memory manager locks a file, it does not read the file. It only
 sets aside memory for the file to occupy when it is read by the DBMS. In
 the special case where a task can run even though there is not enough memory
-available, those tables that can not fit are put on a list of reserved
-tables and there size is subtracted from the quota until they can be
+available, those tables that cannot fit are put on a list of reserved
+tables and their size is subtracted from the quota until they can be
 locked or freed. When memory is freed, the memory manager will try to
 lock the reserved tables.
 
@@ -2924,8 +2925,8 @@ average scan latencies as follows:
 - ``Object_Extras`` [#]_ queries (join): 8 hours.
 
 
-As stated in 8.10.2, there will schedulers for queries that are expected to
-take one hour, eight hours, or twelve hours and the schedulers group the
+As stated in 8.10.2, there will be schedulers for queries that are expected
+to take one hour, eight hours, or twelve hours. The schedulers group the
 the tasks by chunk id and then the highest scan rating of the all tables in
 the task. The scan ratings are meant to be unique per table and indicative
 of the size of the table, so that this sorting places scans using the
@@ -2933,12 +2934,12 @@ largest table from the same chunk next to each other in the queue. Using
 scan rating allows flexibility to work with data sets with schemas different
 than that of LSST.
 
-Since scan are not limited to specific tables, and it is impossible to
-predict how long an individual query will take, a separate scan for queries
-that could take more than twelve hours may be needed. The worker may need
-to be able to identify user queries too slow for the current scheduler and
-move them to a different scheduler based on the time it takes to complete
-tasks for that user query.
+Since scans are not limited to specific tables, complicated joins could occur
+in user queries that could take more than twelve hours to process. The worker
+may also need to be able to identify user queries that are too slow for the
+current scheduler based on the time it takes to complete tasks for that query.
+This indicates there may be a need for a scheduler to handle queries with
+very long run times.
 
 .. [#] This includes all ``Object``-related tables, e.g.,
    ``Object_Extra``, ``Object_Periodic``, ``Object_NonPeriodic``,
