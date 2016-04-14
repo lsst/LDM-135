@@ -2667,8 +2667,8 @@ Dynamic metadata will contain the following information:
   information is used to delay table deletion while async queries are in
   progress.
 
-- Per-query worker information, which includes chunk ID and identifying
-  information for the worker processing that chunk ID. This information will
+- Per-query worker information, which includes chunk id and identifying
+  information for the worker processing that chunk id. This information will
   be used to transparently restart the master or migrate query processing to
   a different master in case of master failure.
 
@@ -3178,7 +3178,7 @@ overlap CSV files).
 
 Tables that are partitioned in Qserv must be partitioned identically
 within a Qserv database. This means that chunk tables in a database
-share identical partition boundaries and identical mappings of chunk ID
+share identical partition boundaries and identical mappings of chunk id
 to spatial partition. In order to facilitate table joining, a single
 table's columns are chosen to define the partitioning space and all
 partitioned tables (within a related set of tables) are either
