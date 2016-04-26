@@ -2142,6 +2142,16 @@ hash-addressed `XRootD`_ paths.
 
    XRootD.
 
+While the primary purpose of `XRootD`_ is to provide a distributed
+clustered file system, it is implemented as a plug-in component based
+system that allows "file" to be replaced by any other resource object.
+Qserv makes use of this capability to cluster MySQL databases
+instead of files. Hence, we dispense with calling `XRootD`_ a
+distributed file system and simply call is a generic system for
+providing named communication paths, clustering, request scheduling,
+and error recovery.
+
+
 .. _partitioning:
 
 Partitioning
@@ -2272,11 +2282,15 @@ Dispatch
 
 The baseline Qserv uses `XRootD`_ as a distributed, highly-available
 communications system to allow Qserv frontends to communicate with data
-workers. Current versions of Qserv use a synchronous client API with
-named files as communication channels, but the baseline system will
-utilize a more general two-way named-channeling system which eliminates
+workers. Up until 2015, Qserv used a synchronous client API with
+named files as communication channels. The current baseline system
+utilizes a general two-way named-channeling system which eliminates
 explicit file abstractions in favor of generalized protocol messages
-that can be flexibly streamed.
+that can be flexibly streamed. The scheme is called Scalable Service
+Interface (`SSI`_) and is built on top of `XRootD`_. The interface was
+specifically designed to hide underlying `XRootD`_ dependencies. This
+allows switching the underlying implementation with minimal impact to
+Qserv.
 
 .. _wire-protocol:
 
@@ -2310,36 +2324,40 @@ partial query results to end users.
 
 Frontend
 ~~~~~~~~
-
+ABH
 In 2012, a new `XRootD`_ client API was developed to address our concerns
 over the older version's scalability (uncovered during a 150 node, 30TB
 scalability test). The new client API began production use for the
 broader `XRootD`_ community in late 2012. Subsequently, work began under
-our guidance towards an `XRootD`_ client API that was based on
+our guidance towards an `XRootD`_ Qserv client API that was based on
 request-response interaction over named channels, instead of opening,
-reading, and writing files. Qserv will begin porting to this API in late
-2013, and in the process should eliminate a significant body of code
-that maps dispatching and result-retrieving to file operations. The
-equivalent logic will reside in the Xroot code base, where it may be
-exercised by other projects.
+reading, and writing files. A production version of this API,
+the Scalable Service Interface (`SSI`_) became available in early 2015
+and Qserv has since been ported to use this interface. The port
+eliminated a significant body of code that maps dispatching and
+result-retrieving to file operations. The `SSI`_ API will reside
+in the Xroot code base, where it may be exercised by other projects.
 
-The new API (XrdSci) provides Qserv with a fully asynchronous interface
+The `SSI`_ API provides Qserv with a fully asynchronous interface
 that eliminates nearly all blocking threads used by the Qserv frontend
-to communicate with its workers. This should eliminate one class of
-problems we have encountered during large-scale testing. The new API has
-defined interfaces that should integrate smoothly with the
-Protobufs-encoded messages used by Qserv. One novel feature will be a
-streaming response interface that enables reduced buffering in
-transmitting query results from a worker mysqld to a the frontend, which
-should enable lower end-to-end query latency and lower storage
-requirements on workers.
+to communicate with its workers. This eliminated one class of
+problems we have encountered during large-scale testing. The `SSI`_ API
+has defined interfaces that integrate smoothly with the
+Protobufs-encoded messages used by Qserv. Two novel features were
+specifically added to improve Qserv performance. The streaming response
+interface enables reduced buffering in transmitting query results
+from a worker mysqld to a the frontend, which lowers end-to-end query
+latency and reduces storage requirements on workers. The out-of-band
+meta-data response which arrives prior to the data results can be used
+to map out the Protobufs encoding and significantly simplify handling
+response memory buffers.
 
 The fully asynchronous API is crucial on the master because of the large
 number of concurrent chunk queries in flight expected in normal
 operation. For example, with the sky split into 10k pieces, having 10
 full-scanning queries running concurrently would have 100k concurrent
 chunk queries--too large a number of threads to allow on a single
-machine. Hence an asynchronous API to `XRootD`_ is crucial. Threads are
+machine. Hence, an asynchronous API to `XRootD`_ is crucial. Threads are
 used to parallelize multiple CPU-bound tasks. While it does not seem to
 be important to parse/analyze/manipulate a single user query in parallel
 (and such a task would be a research topic), the retrieval and
@@ -2358,10 +2376,15 @@ Worker
 The Qserv worker uses both threads and asynchronous calls to provide
 concurrency and parallelism. To service incoming requests from the
 `XRootD`_ API, an asynchronous API is used to receive requests and enqueue
-them for action. Threads are maintained in a thread pool to perform
-incoming queries and wait on calls into the DBMS's API (currently, the
-MySQL C-API, which does not seem to have an asynchronous API). Threads
-will be allowed to run in observance of the amount of parallel resources
+them for action. Specifically, the Scalable Service Interface (`SSI`_)
+is used on Qserv workers as well. The interface provides a mirror image
+of the actions taken on the front-end making the logic relatively easy
+to follow and the implementation less error prone.
+
+Threads are maintained in a thread pool to perform incoming queries
+and wait on calls into the DBMS's API (currently, the apparently
+synchrnous MySQL C-API). Threads
+are allowed to run in observance of the amount of parallel resources
 available. The worker estimates the I/O dependency of each incoming
 chunk query in terms of the chunk tables involved and disk resources
 involved, and attempts to ensure that disk access is almost completely
@@ -2907,7 +2930,50 @@ query, and the impact is amortized among all disks on all workers.
 For discussion about the performance of the existing prototype, refer to
 :ref:`demo-shared-scans`.
 
+.. _shared-scan-memory_management
+
+Memory management
+~~~~~~~~~~~~~~~~~~~~~~~
+
+To minimize system paging when multiple threads are scanning the same
+table, we implemented a memory manager called `memman`_. When a shared
+scan is about to commence, the shared scan scheduler informs `memman`_
+about the tables the query will be using and how important it is to
+keep those tables in memory during the course of the query. When
+directed to keep teh tables in memory, `memman`_ opens each data base
+table file, maps it into memory, and then locks the pages to prevent
+the kernel from stealing the pages for other uses. Thus, once a file
+page is faulted in, it stays in memory and allows other threads to
+scan the contents of the page without incurring additional page faults.
+Once the the shared scan of the table completes, `memman`_ is told
+that the tables no longer need to remain in memory. `memman`_ frees
+up the pages by unlocking them and deleting the mapping.
+
+This type of management is necessary because the prime paging pool
+to satisfy system paging requirements is the set of unlocked pages
+holding file system data.
+
 .. _shared-scan-multiple-tables:
+
+.. _shared-scan-cms_scheduling
+
+`XRootD`_ scheduling support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When the front-end dispatches a query, the `XRootD`_ normally picks
+th least used server in an attempt to spread the load across all of the
+nodes holding the required table. While this works well for interactive
+queries, it is hardly ideal for shared scan queries. In order to
+maximize memory usage, queries for the same table in a shared scan
+should all be targeted to the same node. A new scheduling mode was
+added to the `XRootD`_ cmsd called affinity scheduling. The front-end
+can tell `XRootD`_ whether or not a particular query has
+affinity to other queries using the same table. Queries that have affinity
+are always sent to the same node relative to the table they will be using.
+This allows the back-end scheduler to minimize paging by running the
+maximum number of queries against the same table in parallel. Should
+that node fail, `XRootD`_ assign another working node that has the
+table as the target node for queries that have affinity.
 
 Multiple tables support
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -2969,7 +3035,8 @@ Cluster and Task Management
 
 Qserv delegates management of cluster nodes to `XRootD`_. The `XRootD`_ system
 manages cluster membership, node registration/de-registration, address
-lookup, replication, and communication. Its distributed filesystem API
+lookup, replication, and communication. Its Scalable Service
+Interface (`SSI`_) API
 provides data-addressed communication channels to the rest of Qserv,
 hiding details like node count, the mapping of data to nodes, the
 existence of replicas, and node failure. The Qserv manager focuses on
@@ -2979,6 +3046,11 @@ and executing queries on their local data.
 Cluster management performed outside of `XRootD`_ does not directly affect
 query execution, but include coordinating data distribution, loading,
 nodes joining/leaving and is discussed in :ref:`qserve-admin`.
+The `SSI`_ API includes methods that allow dynamic updates to the
+data view of an `XRootD`_ cluster. So that when new tables appear or
+disappear, the `XRootD`_ system will incorporate that information for
+future scheduling decisions. Thus, clusters can dynamically change
+without the need to restart the `XRootD`_ system.
 
 .. _fault-tolerance:
 
@@ -3000,7 +3072,7 @@ The components that comprise Qserv include features that independently
 provide failure-prevention and failure-recovery capabilities. The MySQL
 proxy is designed to balance its load among several underlying MySQL
 servers and provide automatic fail-over in the event a server fails. The
-`XRootD`_ distributed file system provides multiple managers and highly
+`XRootD`_ system provides multiple managers and highly
 redundant servers to provide high bandwidth, contend with high request
 rates, and cope with unreliable hardware. And the Qserv master itself
 contains logic that works in conjunction with `XRootD`_ to isolate and
@@ -3112,7 +3184,7 @@ determine the packages, configure, compile and install them in an
 automated process.
 
 Currently, the Qserv installation procedure supports only the official
-LSST platform—RHEL6, and SL6 Linux distributions. Other UNIX-like system
+LSST platform— RHEL6, and SL6 Linux distributions. Other UNIX-like system
 will be supported in the future as needed. The Qserv package first can
 be downloaded from SLAC for install. In the initial README there are
 basic install procedures, which start with a bootstrap script, that will
@@ -3326,8 +3398,6 @@ have a quality of a typical late-alpha / early-beta software.
 
 Future work includes:
 
-- switching to a new `XRootD`_ client
-
 - extending metadata to support run-time statistics, implementing query
   management tools
 
@@ -3359,11 +3429,6 @@ Future work includes:
 - partition granularity varying per table
 
 - security
-
-**Switching to a new XRootD client**. Based on large-scale tests we
-run the Qserv (the `XRootD`_ client qserv relies on) uses threads
-inefficiently. The `XRootD`_ team recently implemented a new,
-thread-efficient client requested by us.
 
 **Extending metadata to support run-time statistics, implementing query
 management tools**. Qserv currently does not maintain any explicit
@@ -3497,6 +3562,22 @@ possible.
   their footprint, this is currently not a requirement. Potential
   solution would involve adding a custom index similar to the
   r-tree-based indexes such as the TOUCH [67].
+
+- **Very large results**. Currently, the front-end that disptached the
+  query is responsible for assembling the results. In general, this is
+  not a scalable approach as the resources required to processes the
+  results may be several orders of magnitude greater than those needed
+  to dispatch the query. One solution is to replicate the front-end
+  to the extent necessary to handle query results. Alternatively,
+  the Scalable Service Interface can be augmented to allow running
+  disconnected queries. That is, once a particular front-end dispatches
+  a query it can get a handle to that query and disconnect from it.
+  Another server can, using that handle, reconnect to the query and
+  process the results. This is a more flexible model as it allows
+  independent scaling of query dispatch and result processing. It
+  also has the aded benefit of not cancelling in-progress queries
+  dispatched by a particulr fron-end should that front-end die.
+
 
 .. _large-scale-testing:
 
@@ -4319,8 +4400,7 @@ release that was missing recent patches for a particular client race
 condition. Another culprit was instability exacerbated by excessive use
 of threads in the original threading model that the testing in section
 9.5 was to address. This was addressed by re-tuning relevant threading
-constants. The new `XRootD`_ client we are working on (expected to be ready
-in November of 2013) is expected to further improve thread management.
+constants. The new `XRootD`_ client has alleviated this problem.
 
 .. _in2p3-queries:
 
@@ -6498,7 +6578,7 @@ Change Record
 | 3.2         | 10/10/2013 | TCT approved                     | R Allsman       |
 +-------------+------------+----------------------------------+-----------------+
 
-.. _XRootD: http://xrootd.slac.stanford.edu
+.. _XRootD: http://xrootd.org
 
 .. _XLDB: http://xldb.org
 
