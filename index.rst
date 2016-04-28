@@ -2940,18 +2940,18 @@ table, we implemented a memory manager called `memman`_. When a shared
 scan is about to commence, the shared scan scheduler informs `memman`_
 about the tables the query will be using and how important it is to
 keep those tables in memory during the course of the query. When
-directed to keep teh tables in memory, `memman`_ opens each data base
+directed to keep the tables in memory, `memman`_ opens each data base
 table file, maps it into memory, and then locks the pages to prevent
 the kernel from stealing the pages for other uses. Thus, once a file
 page is faulted in, it stays in memory and allows other threads to
 scan the contents of the page without incurring additional page faults.
-Once the the shared scan of the table completes, `memman`_ is told
+Once the shared scan of the table completes, `memman`_ is told
 that the tables no longer need to remain in memory. `memman`_ frees
 up the pages by unlocking them and deleting the mapping.
 
-This type of management is necessary because the prime paging pool
-to satisfy system paging requirements is the set of unlocked pages
-holding file system data.
+This type of management is necessary to satisfy system paging
+requirements because the prime paging pool is the set of unlocked
+file system pages.
 
 .. _shared-scan-multiple-tables:
 
@@ -2961,10 +2961,10 @@ holding file system data.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When the front-end dispatches a query, the `XRootD`_ normally picks
-th least used server in an attempt to spread the load across all of the
+the least used server in an attempt to spread the load across all of the
 nodes holding the required table. While this works well for interactive
 queries, it is hardly ideal for shared scan queries. In order to
-maximize memory usage, queries for the same table in a shared scan
+optimize memory and I/O usage, queries for the same table in a shared scan
 should all be targeted to the same node. A new scheduling mode was
 added to the `XRootD`_ cmsd called affinity scheduling. The front-end
 can tell `XRootD`_ whether or not a particular query has
@@ -2972,7 +2972,7 @@ affinity to other queries using the same table. Queries that have affinity
 are always sent to the same node relative to the table they will be using.
 This allows the back-end scheduler to minimize paging by running the
 maximum number of queries against the same table in parallel. Should
-that node fail, `XRootD`_ assign another working node that has the
+that node fail, `XRootD`_ assigns another working node that has the
 table as the target node for queries that have affinity.
 
 Multiple tables support
@@ -3184,7 +3184,7 @@ determine the packages, configure, compile and install them in an
 automated process.
 
 Currently, the Qserv installation procedure supports only the official
-LSST platform— RHEL6, and SL6 Linux distributions. Other UNIX-like system
+LSST platform— RHEL6, and SL6 Linux distributions. Other UNIX-like systems
 will be supported in the future as needed. The Qserv package first can
 be downloaded from SLAC for install. In the initial README there are
 basic install procedures, which start with a bootstrap script, that will
