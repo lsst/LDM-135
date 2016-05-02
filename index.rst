@@ -432,10 +432,10 @@ following scans:
 - one full table scan of Object table for the latest data release
   only,
 
-- one synchronized full table scan of Object\_Narrow, Source and
+- one synchronized full table scan of Object, Source and
   ForcedSource tables every 12 hours for the latest data release only,
 
-- one synchronized full table scan of Object\_Narrow and
+- one synchronized full table scan of Object and
   Object\_Extra every 8 hours for the latest and previous data
   releases.
 
@@ -2667,8 +2667,8 @@ Dynamic metadata will contain the following information:
   information is used to delay table deletion while async queries are in
   progress.
 
-- Per-query worker information, which includes chunk ID and identifying
-  information for the worker processing that chunk ID. This information will
+- Per-query worker information, which includes chunk id and identifying
+  information for the worker processing that chunk id. This information will
   be used to transparently restart the master or migrate query processing to
   a different master in case of master failure.
 
@@ -2789,63 +2789,95 @@ rows, rather than some finite number (thousands or less).
 Implementation
 ~~~~~~~~~~~~~~
 
-The first implementation of shared scans in Qserv is two parts. The
-first part is a basic classification of incoming queries as scanning
-queries or non-scanning queries. A query is considered to scan a table
+The implementation of shared scans in Qserv is in two parts. The first
+part is a basic classification of incoming queries as scanning queries
+or non-scanning queries. A query is considered to scan a table
 if it depends on non-indexed column values and involves more than *k*
 chunks (where *k* is a tunable constant). Note that involving multiple
 chunks implies that the query selects from at least one partitioned
 table. This classification is performed during query analysis on the
-front-end and leveraging table metadata. The identified "scan tables"
-are marked and passed along to Qserv workers, which use the existence of
-scan tables in scheduling the fragments of these scanning queries.
+front-end and leveraging table metadata. The metadata includes a
+“scan rating”, which is set by hand. Higher scan ratings indicate larger
+tables that take longer to read from disk. The identified “scan tables”
+and their ratings are marked and passed along to Qserv workers, which
+use the information in scheduling the fragments of these scanning queries.
 
 The second part of the shared scans implementation is a scheduling
 algorithm that orders query fragment execution to optimize cache
 effectiveness. Because Qserv relies on individual off-the-shelf DBMS
 instances on worker nodes, it is not allowed to modify those instances
-to implement shared scans. Instead, it issues query fragments ordered to
-maximize locality of access in data and time. Using the identified scan
-tables, the algorithm places incoming chunk queries into one of two
-priority queues, each sorted by chunk id. If the current scan has not
-passed the incoming query's chunk id, the query is placed in the active
-queue, otherwise it is placed in the pending queue.
+to implement shared scans.  Instead, it issues query fragments ordered to
+maximize locality of access in data and time, and tries to lock the files
+associated with the tables in memory as much as possible. Using the
+identified scan tables and their ratings, the worker places them on the
+appropriate scheduler. There will be at least three schedulers. One for
+queries expected to complete in under an hour, which are expected to
+be related to the Object table. One for queries expected to take less than
+eight hours, expected to be related to Object_Extra. And one for scans
+expected to take eight to twelve hours for ForcedSource and/or Source
+tables. The reasoning being that a single slow query can impede the
+progress of a shared scan and all the other user queries on that scan.
+There may be a need for another scheduler to handle queries taking more
+than 12 hours.
 
-The scan scheduler's algorithm proceeds as follows. When dispatch slots
-are open, the algorithm checks the front of the active priority queue.
-If the chunk id of the waiting query matches the current chunk id in
-progress and a fixed timeout has not passed since the dispatch of the
-first query for the current chunk id, the waiting query is dispatched.
-Queries are dispatched from the front of the queue until there are no
-more slots or matching queries. If the active queue is empty, the active
-and pending queues are swapped. If the waiting query's chunk id is not
-the current chunk id, it may not be dispatched until (a) at least one
-query for the current chunk id has been completed, signifying that the
-chunk is likely to be completely cached and (b) no queries for other
-chunk id are in-flight. If (a) is not true, the current chunk id is
-likely still being read off disk and a query referencing a different
-chunk will compete for I/O and reduce total disk bandwidth. If (b) is
-not true, then there are other queries that rely on past cached chunks,
-and a new chunk id dispatch would likely kick out those past chunks from
-the cache and force them to incur their own I/O costs.
+Each scheduler places incoming chunk queries into one of two priority
+queues sorted by chunk id then scan rating of the individual tables. If
+the query is for a chunk after the currently scanning chunk id, it is
+placed on the active priority queue, otherwise it is placed on the pending
+priority queue. After chunk id, the priority queue is sorted by the table
+with highest scan rating to ensure that the largest tables in the chunk
+are grouped together.
 
-The scan scheduler utilizes distinct pairs of queues for each sequential
-resource. It is thus able to track and support multiple scans
-simultaneously, provided only one scan is in progress for each disk
-(sequential data source). This maximizes each disk's I/O bandwidth.
-Whereas the I/O resources are treated as parallel and independent, the
-CPU cores on workers are shared, and the scheduler seeks to strike a
-balance between maximizing I/O bandwidth and maximizing scan reuse.
-Maximizing I/O bandwidth would always seek to start new chunk scans
-whenever a disk is idle, skipping over queries that can execute on
-cached data. This makes scans complete faster, reducing scan latency,
-but reduces the amount of useful work done per-scan. On the other hand,
-maximizing scan reuse would always select queries that operated on
-already-scanned (and thus cached) chunks, maximizing CPU efficiency
-because it minimizes the working set of data and thus the pressure on
-the system cache and memory subsystem. This may leave some disks idle,
-but is likely to produce the maximum throughput, unless the skew in CPU
-costs among scanning queries is too great.
+Once the query is on the appropriate scheduler, the algorithm proceeds
+as follows. When a dispatch slot is available, it checks the highest
+priority scheduler. If that scheduler has a query fragment, hereafter
+called tasks, and it is not at its quota limit, it is allowed to start its
+next task, otherwise the worker checks the next scheduler. It continues
+doing this until a task has been started or all the schedulers have been
+checked.
+
+Each scheduler is only allowed to start a task under certain circumstances.
+There must be enough threads available from the pool so that none of the
+other schedulers are starved for threads as well as enough memory available
+to lock all the tables for the task in memory. If the scheduler has no tasks
+running, it may start one task and have memory reserved for the tables in
+that task. This should prevent any scheduler from hanging due to memory
+starvation without requiring complicated logic but could incur extra
+disk I/O. More on locking tables in memory later.
+
+Schedulers check for tasks by first checking the top of the active
+priority queue. If the active priority queue is empty, and the pending
+priority queue is not, then the active and pending queues are swapped
+with the task being taken from the top of the “new” active queue.
+
+Since the queries are being run by a separate DBMS instance of which there
+is little control of how it goes about running queries, the worker can
+control when queries are sent to the DBMS and also lock files in memory.
+Files in memory are among the most likely items to be paged out when
+memory resources are low, which would increase disk I/O. Locking files in
+memory prevents this from happening. However, care must taken in choosing
+how much memory can be used for locking files. Use too much and there will
+be a significant impact on DBMS performance. Set aside too little, and
+schedulers will not make optimum use of the resources available and may be
+forced to run tasks without actually locking the files in memory.
+
+The memory manager controls which files are locked in memory. When a
+scheduler tries to run a task, the task asks the memory manager to lock all
+the shared scan tables it needs. The memory manager determines which files
+are associated with the tables. If the files are already locked in memory
+and there is enough memory available to lock the files which are not
+already locked, the task is given a handle and allowed to run. When the
+task completes, it hands the handle back to the memory manager. If it was
+the last task using any particular table, the memory for the files used by
+that table is freed.
+
+When the memory manager locks a file, it does not read the file. It only
+sets aside memory for the file to occupy when it is read by the DBMS. In
+the special case where a task can run even though there is not enough memory
+available, those tables that cannot fit are put on a list of reserved
+tables and their size is subtracted from the quota until they can be
+locked or freed. When memory is freed, the memory manager will try to
+lock the reserved tables.
 
 Because Qserv processes interactive, short queries concurrently with
 scanning queries, its query scheduler should be able to allow for those
@@ -2892,8 +2924,22 @@ average scan latencies as follows:
 
 - ``Object_Extras`` [#]_ queries (join): 8 hours.
 
-A dedicated queue (and consequently, in-memory space for corresponding
-chunks) will be managed for each scan.
+
+As stated in 8.10.2, there will be schedulers for queries that are expected
+to take one hour, eight hours, or twelve hours. The schedulers group the
+the tasks by chunk id and then the highest scan rating of the all tables in
+the task. The scan ratings are meant to be unique per table and indicative
+of the size of the table, so that this sorting places scans using the
+largest table from the same chunk next to each other in the queue. Using
+scan rating allows flexibility to work with data sets with schemas different
+than that of LSST.
+
+Since scans are not limited to specific tables, complicated joins could occur
+in user queries that could take more than twelve hours to process. The worker
+may also need to be able to identify user queries that are too slow for the
+current scheduler based on the time it takes to complete tasks for that query.
+This indicates there may be a need for a scheduler to handle queries with
+very long run times.
 
 .. [#] This includes all ``Object``-related tables, e.g.,
    ``Object_Extra``, ``Object_Periodic``, ``Object_NonPeriodic``,
@@ -3132,7 +3178,7 @@ overlap CSV files).
 
 Tables that are partitioned in Qserv must be partitioned identically
 within a Qserv database. This means that chunk tables in a database
-share identical partition boundaries and identical mappings of chunk ID
+share identical partition boundaries and identical mappings of chunk id
 to spatial partition. In order to facilitate table joining, a single
 table's columns are chosen to define the partitioning space and all
 partitioned tables (within a related set of tables) are either
