@@ -4,9 +4,6 @@
 
 
 % Package imports go here.
-\usepackage{tocloft}% http://ctan.org/pkg/tocloft
-\setlength{\cftsubsecnumwidth}{4em}% Set length of number width in ToC for \subsection
-\makeatother
 
 
 % Local commands go here.
@@ -60,6 +57,11 @@ This document discusses the LSST database system architecture.
 }
 
 \begin{document}
+\makeatletter
+\renewcommand{\l@section}{\@dottedtocline{1}{1.5em}{2.6em}}
+\renewcommand{\l@subsection}{\@dottedtocline{2}{4.0em}{3.6em}}
+\renewcommand{\l@subsubsection}{\@dottedtocline{3}{7.4em}{4.5em}}
+\makeatother
 
 % Create the title page.
 % Table of contents is added automatically with the "toc" class option.
