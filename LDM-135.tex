@@ -3922,41 +3922,4 @@ would prevent us from running multiple instances on a single machine.
 \renewcommand{\refname}{}
 \bibliography{local,lsst,lsst-dm,refs_ads,refs,books}
 
-\section{Appendix D Qserv-related Research
-Topics}\label{appendix-d-qserv-related-research-topics}
-
-\textbf{Locality-efficient group scheduling:} Qserv breaks up a query
-into a number of independent sub-queries with unique data dependencies.
-When multiple high-level queries are in flight, it must schedule many
-more sub-queries, trying to minimize the latency of each top-level query
-while maximizing the total system hardware utilization and I/O
-efficiency. We propose researching this problem of locality-efficient
-group scheduling and implementing the solution in the context of Qserv.
-We will characterize its performance and describe the trade-offs that
-affect system performance.
-
-\textbf{Windowed-mapping of distributed request queues on k-resources:}
-Because Qserv queries can be split into thousands (or millions) of
-independent sub-queries, the resulting task of assigning sub-queries to
-nodes may be computationally expensive. We propose development of a
-windowed-mapping algorithm that ensures \(O(k)\) assignment given a
-sufficient window size, as well as heuristics for finding the window
-size for a given system configuration. Successful development of the
-algorithm and corresponding implementation will help Qserv scale beyond
-thousands of nodes with near constant latency.
-
-\textbf{Fault-tolerant sloppy-state task management:} In large clusters,
-the task manager is often bottlenecked by the frequency and sheer number
-of state updates from its numerous execution nodes. We propose
-development of a scheduling algorithm that shifts part of the management
-to the requesting clients and keeping only sloppy system state on the
-centralized scheduler. We speculate that stale state information is
-usually sufficient for the scheduler, and that client-reported
-corrections in the remaining cases is low enough that keeping sloppy
-state is a large net benefit. We believe this management model will
-minimize the management messaging between the scheduler, clients, and
-workers and enable extreme scaling in Qserv. Our successful
-implementation should be useful for many other systems for scheduling
-tasks on large numbers of execution nodes.
-
 \end{document}
