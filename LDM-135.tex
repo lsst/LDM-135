@@ -104,7 +104,7 @@ trade-offs, applicability of technologies such as solid state disks,
 ingest techniques and others. We ran many tests to determine the design
 configuration, determine limits and uncover potential bottlenecks. In
 particular, we chose \emph{MySQL} as our baseline open source,
-single-node DBMS and \href{http://xrootd.org}{XRootD} as an open source,
+single-node DBMS and XRootD \citep{XRootD} as an open source,
 elastic, distributed, fault-tolerant messaging system.
 
 We developed a prototype of the baseline architecture, called
@@ -114,7 +114,7 @@ attention to minimizing exposure to vendor-specific features and
 add-ons. Many key features including the scalable dispatch system and
 2-level partitioner have been implemented at the prototype level and
 integrated with the two underlying production-quality components: MySQL
-and \href{http://xrootd.org}{XRootD}. Scalability and performance have
+and XRootD. Scalability and performance have
 been successfully demonstrated on a variety of clusters ranging from
 20-node-100TB cluster to 300-node-30TB cluster, tables as large as 50
 billion rows and concurrency exceeding 100,000 in-flight chunk-queries.
@@ -137,14 +137,14 @@ few years, in 2008 we initiated the SciDB array-based scientific
 database project. Due to lack of many traditional RDBMS-features in
 SciDB and still nascent fault tolerance, we believe it is easier to
 build the LSST database system using
-MySQL+\href{http://xrootd.org}{XRootD} than it would be to build it
+MySQL+XRootD than it would be to build it
 based on SciDB. In addition we closely collaborate with the MonetDB open
 source columnar database team -- a successful demonstration of Qserv
 based on MonetDB instead of MySQL was done in 2012. Further, to stay
 current with the state-of-the-art in peta-scale data management and
 analysis, we continue a dialog with all relevant solution providers,
 both DBMS and Map/Reduce, as well as with data-intensive users, both
-industrial and scientific, through the \href{http://xldb.org}{XLDB}
+industrial and scientific, through the XLDB \citep{XLDB}
 conference series we lead, and beyond.
 
 \section{Introduction}\label{introduction}
@@ -635,7 +635,7 @@ is a much better fit than Map/Reduce-based system, primarily due to
 features such as indexes, schema and speed. For that reason, our
 baseline architecture consists of \emph{custom} software built on two
 production components: an open source, ``simple'', single-node,
-non-parallel DBMS (MySQL) and \href{http://xrootd.org}{XRootD}. To ease
+non-parallel DBMS (MySQL) and XRootD. To ease
 potential future DBMS migrations, the communication with the underlying
 DBMS relies on \emph{basic} DBMS functionality only, and avoids any
 vendor-specific features and additions.
@@ -965,8 +965,8 @@ solution once they mature.
 
 Further, our research led to creation a new, now
 internationally-recognized conference series,
-\href{http://xldb.org}{Extremely Large Databases (XLDB)}. As we continue
-leading the \href{http://xldb.org}{XLDB} effort, it gives us a unique
+Extremely Large Databases (XLDB). As we continue
+leading the XLDB effort, it gives us a unique
 opportunity to reach out to a wide range of high-profile organizations
 dealing with large data sets, and raise awareness of the LSST needs
 among researchers and developers working on both MR and DBMS solutions.
@@ -992,7 +992,7 @@ transactions. The most recent MR developments at Google are Dremel
 {[}Dremel{]}\_ - an interactive ad-hoc query system for analysis of
 read-only data, and Tenzing -- a full SQL implementation on the MR
 Framework {[}Chattopadhyay11{]}.\footnote{Through our
-  \href{http://xldb.org}{XLDB} efforts, Google has provided us with a
+  XLDB efforts, Google has provided us with a
   preprint of a Tenzing manuscript accepted for publication at VLDB
   2011.}
 
@@ -1002,46 +1002,46 @@ and Cloudera, and they have already gained wide-spread acceptance and
 support. The open source version of MR, \emph{Hadoop}, has became
 popular in particular among industrial users. Other solutions developed
 on top (and ``around'') Hadoop include
-\href{http://hadoop.apache.org/hbase/}{HBase} (equivalent of BigTable),
-\href{http://wiki.apache.org/hadoop/Hive}{Hive} (concept similar to
+HBase \citep{HBase} (equivalent of BigTable),
+Hive \citep{Hive} (concept similar to
 Google's Dremel), \emph{Pig Latin} (equivalent to Google's Sawzall),
-\href{website:\%20http://zookeeper.sourceforge.net/}{Zookeeper}
+Zookeeper
 (equivalent to Google's Chubby), \emph{Simon}, and others. As in
 Google's case, the primary purpose of building these solutions is adding
 database-features on top of MR. Hadoop is commercially supported by
-Cloudera, \href{http://www.hortonworks.com/}{Hortonworks} {[}Yahoo{]}
-and \href{http://hadapt.com}{Hadapt}.
+Cloudera \citep{Cloudera}, Hortonworks \citep{Hortonworks}, {[}Yahoo{]}
+and Hadapt \citep{Hadapt}.
 
 We have
-\href{http://dev.lsstcorp.org/trac/wiki/db\%60Hive\%60_Experiment}{experimented
-with Hadoop (0.20.2) and Hive (0.7.0) in mid 2010 using a 1 billion row
-USNO-B data set on a 64 node cluster}. Common LSST queries were tested,
+experimented
+with Hadoop (0.20.2) and Hive (0.7.0) in mid 2010\footnote{\url{https://dev.lsstcorp.org/trac/wiki/db/HiveExperiment}} using a 1 billion row
+USNO-B data set on a 64 node cluster. Common LSST queries were tested,
 ranging from low-volume type (such as finding a single object, selecting
 objects near other know object), through high-volume ones (full table
 scans) to complex queries involving joins (join was implemented in a
 standard way, in the \emph{reduce} step). The results were discussed
-with Hadoop/\href{http://wiki.apache.org/hadoop/Hive}{Hive} experts from
+with Hadoop/Hive experts from
 Cloudera. Periodically we revisit the progress and feature set available
 in the Hadoop ecosystem, but to date we have not found compelling
 reasons to consider Hadoop as a serious alternative for managing LSST
 data.
 
 Independently, Microsoft developed a system called
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad},
+Dryad \citep{Dryad},
 geared towards executing distributed computations beyond ``flat''
 \emph{Map} and \emph{Reduce}, along with a corresponding language called
 \emph{LINQ}. Due to its strong dependence on Windows OS and limited
 availability, use of
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad}
+Dryad
 outside of Microsoft is very limited. Based on news reports
 {[}Zdnet{]}\_, Microsoft dropped support for
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad} back
+Dryad back
 in late 2011.
 
 Further, there is a group of new emerging solutions often called as
 \emph{NoSQL}. The two most popular ones are
-\href{http://www.mongodb.org/}{MongoDB} and
-\href{http://cassandra.apache.org/}{Cassandra}.
+MongoDB \citep{MongoDB} and
+Cassandra \citep{Cassandra}.
 
 The remaining of this section discusses all of the above-mentioned
 products.
@@ -1154,10 +1154,10 @@ RDBMS, in particular for the variety of joins required (including star
 schema, merge joins, and self joins). Standard RDBMS features like
 views, stored procedures, and privileges would have to be added from the
 ground up. Third, SciDB's fault tolerance is not yet at the level of
-\href{http://xrootd.org}{XRootD}. Overall, the level of coding we would
+XRootD. Overall, the level of coding we would
 have to do to build on the current SciDB implementation appears to be
 larger than what we are planning on top of
-\href{http://xrootd.org}{XRootD}/MySQL. As SciDB's implementation
+XRootD/MySQL. As SciDB's implementation
 progresses, though, this trade-off could change.
 
 \subsubsection{Object-oriented
@@ -1236,8 +1236,8 @@ provide all scientists with the ability to install the LSST database at
 their institution at low licensing and maintenance cost.
 
 Columnar stores are starting to gain in popularity. Although
-\href{http://en.wikipedia.org/wiki/Column-oriented_DBMS}{the list is
-already relatively large}, the number of choices worth considering is
+the list is
+already relatively large\footnote{\url{http://en.wikipedia.org/wiki/Column-oriented_DBMS}}, the number of choices worth considering is
 relatively small. Today's most popular commercial choice is HP Vertica,
 and the open source solutions include MonetDB and Calpont's InfiniDB.
 The latter also implements shared nothing MPP, however the multi-server
@@ -1411,10 +1411,10 @@ operators. Although nearly anything can be implemented in successive MR
 stages, there may be more efficient methods, and those methods do not
 need to be reinvented constantly. MR developers have also explored the
 addition of indexes, schemas, and other database-ish features.\footnote{An
-  example of that is \href{http://wiki.apache.org/hadoop/Hive}{Hive}.}
+  example of that is Hive.}
 Some have even built a complete relational database system\footnote{An
   example of that is
-  \href{http://db.cs.yale.edu/hadoopdb/hadoopdb.html}{HadoopDB}} on top
+  HadoopDB \citep{HadoopDB}} on top
 of MR.
 
 The database community has benefited from MR's experience in two ways:
@@ -1443,7 +1443,7 @@ The database community has benefited from MR's experience in two ways:
 
 The fact MR community is rapidly adding database/SQL like features on
 top of their plain MR (Tenzing,
-\href{http://wiki.apache.org/hadoop/Hive}{Hive}, HadoopDB, etc),
+Hive, HadoopDB, etc),
 confirms the need for database-like features (indexes, schemas,
 catalogs, sql).
 
@@ -1791,7 +1791,7 @@ major risks {[}Docushare-7025{]}\_.
 We have a prototype system (\emph{Qserv}) that will be turned into a
 production system. Given that a large fraction of its functionality is
 derived from two stable, production quality, open source components
-(MySQL and \href{http://xrootd.org}{XRootD}), turning it into production
+(MySQL and XRootD), turning it into production
 system is possible during the LSST construction phase.
 
 A viable alternative might be to use an off-the-shelf system. In fact,
@@ -1827,10 +1827,10 @@ purchased by Oracle, leading to doubts as to whether the MySQL project
 will be sufficiently supported in the long-term. Since the purchase,
 several independent forks of MySQL software have emerged, including
 MariaDB (supported by one of the MySQL founders),
-\href{http://drizzle.org/}{Drizzle} (supported by key architects of
+Drizzle \citep{Drizzle} (supported by key architects of
 MySQL), and Percona. Should MySQL disappear, these open-source,
 MySQL-compatible\footnote{With the exception of
-  \href{http://drizzle.org/}{Drizzle}, which introduced major changes to
+  Drizzle, which introduced major changes to
   the architecture.} systems are a solid alternative. Should we need to
 migrate to a different DBMS, we have taken multiple measures to minimize
 the impact:
@@ -1911,7 +1911,7 @@ is expected in late 2011. Further, to stay current with the
 state-of-the-art in peta-scale data management and analysis, we continue
 a dialog with all relevant solution providers, both DBMS and Map/Reduce,
 as well as with data-intensive users, both industrial and scientific,
-through the \href{http://xldb.org}{XLDB} conference and workshop series
+through the XLDB conference and workshop series
 we lead, and beyond.
 
 To understand query complexity and expected access patterns, we are
@@ -1942,7 +1942,7 @@ expensive commercial solutions, and to mitigate risks of not having an
 off-the-shelf system in time for LSST construction, we built a prototype
 system for user query access, called \emph{Query Service} (Qserv). The
 system relies on two production-quality components: MySQL and
-\href{http://xrootd.org}{XRootD}. The prototype closely follows the LSST
+XRootD. The prototype closely follows the LSST
 baseline database architecture described in chapter 3
 
 \subsection{Components}\label{components}
@@ -1970,11 +1970,11 @@ future.
 
 \subsubsection{XRootD}\label{xrootd}
 
-The \href{http://xrootd.org}{XRootD} distributed file system is used to
+The XRootD distributed file system is used to
 provide a distributed, data-addressed, replicated, fault-tolerant
 communication facility to Qserv. Re-implementing these features would
 have been non-trivial, so we wanted to leverage an existing system.
-\href{http://xrootd.org}{XRootD} has provided scalability,
+XRootD has provided scalability,
 fault-tolerance, performance, and efficiency for over 10 years of in the
 high-energy physics community, and its relatively flexible API enabled
 its use as a more general communication medium instead of a file system.
@@ -1982,16 +1982,16 @@ Since it was designed to serve large data sets, we were confident that
 it could mediate not only query dispatch communication, but also bulk
 transfer of results.
 
-A \href{http://xrootd.org}{XRootD} cluster is implemented as a set of
+A XRootD cluster is implemented as a set of
 data servers and a redirector(s). A client connects to the redirector,
 which acts as a caching namespace lookup service that redirects clients
-to appropriate data servers. In Qserv, \href{http://xrootd.org}{XRootD}
+to appropriate data servers. In Qserv, XRootD
 data servers become Qserv workers by plugging custom code into
-\href{http://xrootd.org}{XRootD} as a custom file system implementation.
-The Qserv master dispatches work as an \href{http://xrootd.org}{XRootD}
+XRootD as a custom file system implementation.
+The Qserv master dispatches work as an XRootD
 client to workers by writing to partition-addressed
-\href{http://xrootd.org}{XRootD} paths and reads results from
-hash-addressed \href{http://xrootd.org}{XRootD} paths.
+XRootD paths and reads results from
+hash-addressed XRootD paths.
 
 \begin{figure}[H]
 \centering
@@ -1999,12 +1999,12 @@ hash-addressed \href{http://xrootd.org}{XRootD} paths.
 \caption{XRootD.}
 \end{figure}
 
-While the primary purpose of \href{http://xrootd.org}{XRootD} is to
+While the primary purpose of XRootD is to
 provide a distributed clustered file system, it is implemented as a
 plug-in component based system that allows ``file'' to be replaced by
 any other resource object. Qserv makes use of this capability to cluster
 MySQL databases instead of files. Hence, we dispense with calling
-\href{http://xrootd.org}{XRootD} a distributed file system and simply
+XRootD a distributed file system and simply
 call is a generic system for providing named communication paths,
 clustering, request scheduling, and error recovery.
 
@@ -2124,16 +2124,16 @@ and future LSST needs.
 
 \subsection{Dispatch}\label{dispatch}
 
-The baseline Qserv uses \href{http://xrootd.org}{XRootD} as a
+The baseline Qserv uses XRootD as a
 distributed, highly-available communications system to allow Qserv
 frontends to communicate with data workers. Up until 2015, Qserv used a
 synchronous client API with named files as communication channels. The
 current baseline system utilizes a general two-way named-channeling
 system which eliminates explicit file abstractions in favor of
 generalized protocol messages that can be flexibly streamed. The scheme
-is called Scalable Service Interface (\href{}{SSI}) and is built on top
-of \href{http://xrootd.org}{XRootD}. The interface was specifically
-designed to hide underlying \href{http://xrootd.org}{XRootD}
+is called Scalable Service Interface (SSI) and is built on top
+of XRootD. The interface was specifically
+designed to hide underlying XRootD
 dependencies. This allows switching the underlying implementation with
 minimal impact to Qserv.
 
@@ -2164,24 +2164,24 @@ partial query results to end users.
 
 \subsubsection{Frontend}\label{frontend}
 
-ABH In 2012, a new \href{http://xrootd.org}{XRootD} client API was
+ABH In 2012, a new XRootD client API was
 developed to address our concerns over the older version's scalability
 (uncovered during a 150 node, 30TB scalability test). The new client API
-began production use for the broader \href{http://xrootd.org}{XRootD}
+began production use for the broader XRootD
 community in late 2012. Subsequently, work began under our guidance
-towards an \href{http://xrootd.org}{XRootD} Qserv client API that was
+towards an XRootD Qserv client API that was
 based on request-response interaction over named channels, instead of
 opening, reading, and writing files. A production version of this API,
-the Scalable Service Interface (\href{}{SSI}) became available in early
+the Scalable Service Interface (SSI) became available in early
 2015 and Qserv has since been ported to use this interface. The port
 eliminated a significant body of code that maps dispatching and
-result-retrieving to file operations. The \href{}{SSI} API will reside
+result-retrieving to file operations. The SSI API will reside
 in the Xroot code base, where it may be exercised by other projects.
 
-The \href{}{SSI} API provides Qserv with a fully asynchronous interface
+The SSI API provides Qserv with a fully asynchronous interface
 that eliminates nearly all blocking threads used by the Qserv frontend
 to communicate with its workers. This eliminated one class of problems
-we have encountered during large-scale testing. The \href{}{SSI} API has
+we have encountered during large-scale testing. The SSI API has
 defined interfaces that integrate smoothly with the Protobufs-encoded
 messages used by Qserv. Two novel features were specifically added to
 improve Qserv performance. The streaming response interface enables
@@ -2197,7 +2197,7 @@ number of concurrent chunk queries in flight expected in normal
 operation. For example, with the sky split into 10k pieces, having 10
 full-scanning queries running concurrently would have 100k concurrent
 chunk queries--too large a number of threads to allow on a single
-machine. Hence, an asynchronous API to \href{http://xrootd.org}{XRootD}
+machine. Hence, an asynchronous API to XRootD
 is crucial. Threads are used to parallelize multiple CPU-bound tasks.
 While it does not seem to be important to parse/analyze/manipulate a
 single user query in parallel (and such a task would be a research
@@ -2212,9 +2212,9 @@ can be parallelized among independent user queries.
 
 The Qserv worker uses both threads and asynchronous calls to provide
 concurrency and parallelism. To service incoming requests from the
-\href{http://xrootd.org}{XRootD} API, an asynchronous API is used to
+XRootD API, an asynchronous API is used to
 receive requests and enqueue them for action. Specifically, the Scalable
-Service Interface (\href{}{SSI}) is used on Qserv workers as well. The
+Service Interface (SSI) is used on Qserv workers as well. The
 interface provides a mirror image of the actions taken on the front-end
 making the logic relatively easy to follow and the implementation less
 error prone.
@@ -2243,7 +2243,7 @@ available CPU cores when executing queries, as an example, to complete
 one full table scan on a table consisting of 1,000 chunks, 1,000 queries
 (processes) will be executed. To efficiently handle large number of
 processes that are executed on each worker, we ended up rewriting the
-\href{http://xrootd.org}{XRootD} client and switching from
+XRootD client and switching from
 thread-per-request model to a thread-pool model. The new client is
 completely asynchronous, with real call-backs.
 
@@ -2264,7 +2264,7 @@ Small thread pools for managing live network connections and performing
 lookups \\ \hline
 Worker-xrootd plugin &
 Small thread pool O(\#cores) to make blocking mysql C-API calls into
-local mysqld; callback threads from \href{http://xrootd.org}{XRootD}
+local mysqld; callback threads from XRootD
 perform admission/scheduling of tasks from frontend and transmission of
 results \\ \hline
 \hline
@@ -2279,7 +2279,7 @@ MIN(), and SUM(), and should support SQL92 level GROUP BY.
 
 The secondary index utilizes one or more tables using the InnoDB storage
 engine on each czar to perform lookups on the database's key colume
-(objectId). Performance tests (Figure \href{}{fig-indexing\_tests}) on a
+(objectId). Performance tests (Figure~\ref{fig:indexing-tests}) on a
 single, dual-core host with 1 TB hard disk storage (not SSD) have shown
 that this configuration will support a full load of 40 billion rows in
 about 400,000 seconds (110 hours). A more realistic configuration with
@@ -2289,7 +2289,7 @@ fully loading in less than 48 hours.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{_static/indexing_tests.png}
-\caption{Performance tests of MySQL-based secondary index.}
+\caption{Performance tests of MySQL-based secondary index. \label{fig:indexing-tests}}
 \end{figure}
 
 To improve the performance of the InnoDB storage engine for queries, the
@@ -2744,42 +2744,42 @@ demo-shared-scans.
 \subsubsection{Memory management}\label{shared-scan-memory-management}
 
 To minimize system paging when multiple threads are scanning the same
-table, we implemented a memory manager called \href{}{memman}. When a
+table, we implemented a memory manager called memman. When a
 shared scan is about to commence, the shared scan scheduler informs
-\href{}{memman} about the tables the query will be using and how
+memman about the tables the query will be using and how
 important it is to keep those tables in memory during the course of the
-query. When directed to keep the tables in memory, \href{}{memman} opens
+query. When directed to keep the tables in memory, memman opens
 each data base table file, maps it into memory, and then locks the pages
 to prevent the kernel from stealing the pages for other uses. Thus, once
 a file page is faulted in, it stays in memory and allows other threads
 to scan the contents of the page without incurring additional page
-faults. Once the shared scan of the table completes, \href{}{memman} is
-told that the tables no longer need to remain in memory. \href{}{memman}
+faults. Once the shared scan of the table completes, memman is
+told that the tables no longer need to remain in memory. memman
 frees up the pages by unlocking them and deleting the mapping.
 
 This type of management is necessary to satisfy system paging
 requirements because the prime paging pool is the set of unlocked file
 system pages.
 
-\subsubsection{\texorpdfstring{\href{http://xrootd.org}{XRootD}
+\subsubsection{\texorpdfstring{XRootD
 scheduling
 support}{XRootD scheduling support}}\label{shared-scan-xrootd-scheduling-support}
 
 When the front-end dispatches a query, the
-\href{http://xrootd.org}{XRootD} normally picks the least used server in
+XRootD normally picks the least used server in
 an attempt to spread the load across all of the nodes holding the
 required table. While this works well for interactive queries, it is
 hardly ideal for shared scan queries. In order to optimize memory and
 I/O usage, queries for the same table in a shared scan should all be
 targeted to the same node. A new scheduling mode was added to the
-\href{http://xrootd.org}{XRootD} cmsd called affinity scheduling. The
-front-end can tell \href{http://xrootd.org}{XRootD} whether or not a
+XRootD cmsd called affinity scheduling. The
+front-end can tell XRootD whether or not a
 particular query has affinity to other queries using the same table.
 Queries that have affinity are always sent to the same node relative to
 the table they will be using. This allows the back-end scheduler to
 minimize paging by running the maximum number of queries against the
 same table in parallel. Should that node fail,
-\href{http://xrootd.org}{XRootD} assigns another working node that has
+XRootD assigns another working node that has
 the table as the target node for queries that have affinity.
 
 \subsubsection{Multiple tables support}\label{shared-scan-multiple-tables-support}
@@ -2837,25 +2837,25 @@ includes both the static, as well as the dynamic metadata.
 Management}\label{cluster-and-task-management}
 
 Qserv delegates management of cluster nodes to
-\href{http://xrootd.org}{XRootD}. The \href{http://xrootd.org}{XRootD}
+XRootD. The XRootD
 system manages cluster membership, node registration/de-registration,
 address lookup, replication, and communication. Its Scalable Service
-Interface (\href{}{SSI}) API provides data-addressed communication
+Interface (SSI) API provides data-addressed communication
 channels to the rest of Qserv, hiding details like node count, the
 mapping of data to nodes, the existence of replicas, and node failure.
 The Qserv manager focuses on dispatching queries to endpoints and Qserv
 workers focus on receiving and executing queries on their local data.
 
-Cluster management performed outside of \href{http://xrootd.org}{XRootD}
+Cluster management performed outside of XRootD
 does not directly affect query execution, but include coordinating data
 distribution, loading, nodes joining/leaving and is discussed in
-qserve-admin. The \href{}{SSI} API includes methods that allow dynamic
-updates to the data view of an \href{http://xrootd.org}{XRootD} cluster.
+qserve-admin. The SSI API includes methods that allow dynamic
+updates to the data view of an XRootD cluster.
 So that when new tables appear or disappear, the
-\href{http://xrootd.org}{XRootD} system will incorporate that
+XRootD system will incorporate that
 information for future scheduling decisions. Thus, clusters can
 dynamically change without the need to restart the
-\href{http://xrootd.org}{XRootD} system.
+XRootD system.
 
 \subsection{Fault Tolerance}\label{fault-tolerance}
 
@@ -2874,11 +2874,11 @@ The components that comprise Qserv include features that independently
 provide failure-prevention and failure-recovery capabilities. The MySQL
 proxy is designed to balance its load among several underlying MySQL
 servers and provide automatic fail-over in the event a server fails. The
-\href{http://xrootd.org}{XRootD} system provides multiple managers and
+XRootD system provides multiple managers and
 highly redundant servers to provide high bandwidth, contend with high
 request rates, and cope with unreliable hardware. And the Qserv master
 itself contains logic that works in conjunction with
-\href{http://xrootd.org}{XRootD} to isolate and recover from
+XRootD to isolate and recover from
 worker-level failures.
 
 A worker-level failure denotes any failure mode that can be confined to
@@ -2894,14 +2894,14 @@ behave as if a software fault had occurred. The worker process would
 therefore crash and all chunk queries belonging to that worker would be
 lost. The in-flight queries on its local mysqld would be cleaned up and
 have resources freed. The Qserv master's requests to retrieve these
-chunk queries via \href{http://xrootd.org}{XRootD} would then return an
+chunk queries via XRootD would then return an
 error code. The master responds by re-initializing the chunk queries and
-re-submits them to \href{http://xrootd.org}{XRootD}. Ideally, duplicate
+re-submits them to XRootD. Ideally, duplicate
 data associated with the chunk queries exists on other nodes. In this
-case, \href{http://xrootd.org}{XRootD} silently re-routes the request(s)
+case, XRootD silently re-routes the request(s)
 to the surviving node(s) and all associated queries are completed as
 usual. In the event that duplicate data does not exist for one or more
-chunk queries, \href{http://xrootd.org}{XRootD} would again return an
+chunk queries, XRootD would again return an
 error code. The master will re-initialize and re-submit a chunk query a
 fixed number of times (determined by a parameter within Qserv) before
 giving up, logging information about the failure, and returning an error
@@ -2912,12 +2912,12 @@ Error handling in the event that an arbitrary hardware or software bug
 machine to crash proceeds in the same manner described above. The same
 is true in the event that network loss or transient
 sluggishness/overload has the limited effect of preventing
-\href{http://xrootd.org}{XRootD} from communicating with one or more
+XRootD from communicating with one or more
 worker nodes. As long as such failures are limited to a finite number of
 workers and do not extend to the Qserv master node,
-\href{http://xrootd.org}{XRootD} is designed to record the failure and
+XRootD is designed to record the failure and
 return an error code. Moreover, if duplicate data exists on other nodes,
-this will be registered within \href{http://xrootd.org}{XRootD}, which
+this will be registered within XRootD, which
 will successfully route any subsequent chunk queries.
 
 In the event of an unrecoverable error, the Qserv master is equipped
@@ -2925,13 +2925,13 @@ with a status/error messaging mechanism designed to both log detailed
 information about the failure and to return a human-readable error
 message to the user. This mechanism includes C++ exception handling
 logic that encapsulates all of the master's interactions with
-\href{http://xrootd.org}{XRootD}. If an unrecoverable exception occurs,
+XRootD. If an unrecoverable exception occurs,
 the master gracefully terminates the query, frees associated resources,
 logs the event, and notifies the user. Qserv's internal status/error
 messaging system also generates a status message and timestamp each time
 an individual chunk query achieves a milestone. Such milestones include:
-chunk query dispatch, written to \href{http://xrootd.org}{XRootD},
-results read from \href{http://xrootd.org}{XRootD}, results merged, and
+chunk query dispatch, written to XRootD,
+results read from XRootD, results merged, and
 query finalized. This real-time status information provides useful
 context in the event of an unrecoverable error.
 
@@ -2969,11 +2969,11 @@ providing the full flexibility of running arbitrary code.
 
 Qserv as a service requires a number of components that all need to be
 running, and configured together. On the master node we require mysqld,
-mysql-proxy, \href{http://xrootd.org}{XRootD}, cmsd, qserv metadata
+mysql-proxy, XRootD, cmsd, qserv metadata
 service, and the qserv master process. On each of the worker nodes there
-will also be the mysqld, cmsd, and \href{http://xrootd.org}{XRootD}
+will also be the mysqld, cmsd, and XRootD
 service. These major components come from the MySQL,
-\href{http://xrootd.org}{XRootD}, and Qserv distributions. But to get
+XRootD, and Qserv distributions. But to get
 these to work together we will also require many more software package,
 such as protobuf, lua, expat, libevent, python, zope, boost, java,
 antlr, and so on. And many of these require more recent versions than
@@ -3121,7 +3121,7 @@ with starting all processes needed for the service, in order, and taking
 down all processes to stop the service. Also base monitoring of service
 is supplied here, to report on processes that are running, and
 responding to base queries, to check on MySQL or
-\href{http://xrootd.org}{XRootD} dying or locking up. Also is supplied
+XRootD dying or locking up. Also is supplied
 is the updating of the configuration definitions from the master out to
 all workers, such that all machines need to have the same configurations
 for the services.
@@ -3466,7 +3466,7 @@ We have run several large scale tests
   (2010) several 100-node tests run at SLAC {[}58{]}. These tests helped
   us uncover many bottlenecks and prompted rewriting parts of our
   software, as well as implementing several missing features in
-  \href{http://xrootd.org}{XRootD}.
+  XRootD.
 \item
   (4/2011) A 30 TB test on 150-node SLAC cluster using Qserv in
   40/100/150 node configurations, using 2 billion row Object and 32
@@ -3496,7 +3496,7 @@ The tests 3-6 listed above are described in further details below.
 We configured a cluster of 150 nodes interconnected via gigabit
 Ethernet. Each node had 2 quad-core Intel Xeon X5355 processors with
 16GB memory and one 500GB 7200RPM SATA disk. Tests were conducted with
-Qserv SVN r21589, MySQL 5.1.45 and \href{http://xrootd.org}{XRootD}
+Qserv SVN r21589, MySQL 5.1.45 and XRootD
 3.0.2 with Qserv patches.
 
 \subsubsection{Data}\label{data}
@@ -4029,7 +4029,7 @@ know best. Secondly, the first query dispatch against a chunk takes
 \textasciitilde{}5s, so that cluster cold start latency on a full table
 scan of \textasciitilde{}10,000 chunks takes approximately 100s with
 this many dispatch threads. Subsequently,
-\href{http://xrootd.org}{XRootD} caching allows for near instantaneous
+XRootD caching allows for near instantaneous
 dispatches in comparison.
 
 The thread pool for result reads was given a much smaller size: just 20
@@ -4123,12 +4123,12 @@ identified}\label{software-stability-issues-identified}
 The initial Qserv installation did not function for queries involving
 300 nodes, even though subsets involving 10, 50, 100, and 150 nodes
 functioned properly. The first culprit was the use of an older
-\href{http://xrootd.org}{XRootD} release that was missing recent patches
+XRootD release that was missing recent patches
 for a particular client race condition. Another culprit was instability
 exacerbated by excessive use of threads in the original threading model
 that the testing in section 9.5 was to address. This was addressed by
 re-tuning relevant threading constants. The new
-\href{http://xrootd.org}{XRootD} client has alleviated this problem.
+XRootD client has alleviated this problem.
 
 \subsubsection{Queries}\label{queries-1}
 
@@ -4367,7 +4367,7 @@ To prove Qserv can gracefully handle faults, we artificially triggered
 different error conditions, such as corrupting random parts of a
 internal MySQL files while Qserv is reading them, or corrupting data
 sent between various components of the Qserv (e.g., from the
-\href{http://xrootd.org}{XRootD} to the master process).
+XRootD to the master process).
 
 \subsubsection{Worker failure}\label{worker-failure}
 
@@ -4377,9 +4377,9 @@ communicate with a worker node.
 
 When a relevant worker (i.e. one managing relevant data) has failed
 prior to query execution, either 1) duplicate data exists on another
-worker node, in which case \href{http://xrootd.org}{XRootD} silently
+worker node, in which case XRootD silently
 routes requests from the master to this other node, or 2) the data is
-unavailable elsewhere, in which case \href{http://xrootd.org}{XRootD}
+unavailable elsewhere, in which case XRootD
 returns an error code in response to the master's request to open for
 write. The former scenario has been successfully demonstrated during
 multi-node cluster tests. In the latter scenario, Qserv gracefully
@@ -4394,26 +4394,26 @@ manifestations.
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  If \href{http://xrootd.org}{XRootD} returns an error to the Qserv
+  If XRootD returns an error to the Qserv
   master in response to a request to open for write, Qserv will repeat
   request for open a fixed number (e.g. 5) of times. This has been
   demonstrated.
 \item
-  If \href{http://xrootd.org}{XRootD} returns an error to the Qserv
+  If XRootD returns an error to the Qserv
   master in response to a write, Qserv immediately terminates the query
   gracefully and returns an error to the user. This has been
   demonstrated. Note that this may be considered acceptable behavior (as
   opposed to attempting to recover from the error) since it is an
   unlikely failure-mode.
 \item
-  If \href{http://xrootd.org}{XRootD} returns an error to the Qserv
+  If XRootD returns an error to the Qserv
   master in response to a request to open for read, Qserv will attempt
   to recover by re-initializing the associated chunk query in
   preparation for a subsequent write. This is considered the most likely
   manifestation of worker failure and has been successfully demonstrated
   on a single-node, multi-worker process setup.
 \item
-  If \href{http://xrootd.org}{XRootD} returns an error to the Qserv
+  If XRootD returns an error to the Qserv
   master in response to a read, Qserv immediately terminates the query
   gracefully and returns an error to the user. This has been
   demonstrated. Note that this may be considered acceptable behavior (as
@@ -4426,9 +4426,9 @@ manifestations.
 These tests are meant to simulate data corruption that might occur on
 disk, during disk I/O, or during communication over the network. We
 simulate these scenarios in one of two ways. 1) Truncate data read via
-\href{http://xrootd.org}{XRootD} by the Qserv master to an arbitrary
+XRootD by the Qserv master to an arbitrary
 length. 2) Randomly choose a single byte within a data stream read via
-\href{http://xrootd.org}{XRootD} and change it to a random value. The
+XRootD and change it to a random value. The
 first test necessarily triggers an exception within Qserv. Qserv
 responds by gracefully terminating the query and returning an error
 message to the user indicating the point of failure (e.g. failed while
@@ -4459,6 +4459,8 @@ architectural issues or hardcoded values such as ports or paths that
 would prevent us from running multiple instances on a single machine.
 
 \section{References}\label{references}
+\renewcommand{\refname}{}
+\bibliography{local,lsst,lsst-dm,refs_ads,refs,books}
 
 \section{Appendix A -- Map/Reduce
 Solutions}\label{appendix-a-mapreduce-solutions}
@@ -4554,9 +4556,9 @@ involved.
 Lack of some features that are at the core of every database system
 should not be a surprise -- MR systems are simply built with different
 needs in mind, and even
-\href{http://wiki.apache.org/hadoop/HadoopIsNot}{the Hadoop website
+the Hadoop website
 officially states that \emph{Hadoop is not a substitute for a
-database}}. Nethertheless, many have attempted to compare Hadoop
+database}\footnote{\url{http://wiki.apache.org/hadoop/HadoopIsNot}}. Nevertheless, many have attempted to compare Hadoop
 performance with databases. According to some publications and feedback
 from Hadoop users we talked to, Hadoop is about an order of magnitude
 more wasteful of hardware than a e.g. DB2 {[}databasecolumn{]}\_.
@@ -4576,11 +4578,11 @@ the Cloudera team in September of 2010.
 
 \subsection{Hive}\label{hive}
 
-\href{http://wiki.apache.org/hadoop/Hive}{Hive} is a data warehouse
+Hive is a data warehouse
 infrastructure developed by Facebook on top of Hadoop; it puts
 structures on the data, and defines SQL-like query language. It inherits
 Hadoop's deficiencies including high latency and expensive joins.
-\href{http://wiki.apache.org/hadoop/Hive}{Hive} works on static data, it
+Hive works on static data, it
 particular it can't deal with changing data, as row-level updates are
 not supported. Although it does support some database features, it is a
 ``state where databases were \textasciitilde{}1980: there are almost no
@@ -4591,15 +4593,15 @@ skip the Hadoop layer).
 
 \subsection{HBase}\label{hbase}
 
-\href{http://hadoop.apache.org/hbase/}{HBase} is a column-oriented
+HBase is a column-oriented
 structured storage modeled after Google's Bigtable {[}Bigtable06{]}\_,
 and built on top of the Hadoop HDFS. It is good at incremental updates
 and column key lookups, however, similarly to plain MR, it offers no
 mechanism to do joins -- a typical solution used by most users is to
-denormalize data. \href{http://hadoop.apache.org/hbase/}{HBase} is
+denormalize data. HBase is
 becoming increasingly more popular at Facebook {[}nosqlpedia{]}\_. It is
 supported commercially by Cloudera, Datameer and
-\href{http://hadapt.com}{Hadapt}.
+Hadapt.
 
 \subsection{Pig Latin}\label{pig-latin}
 
@@ -4616,7 +4618,7 @@ developer of Pig Latin -- Chris Olston.
 Systems}\label{other-hadoop-related-systems}
 
 Other systems build for Hadoop include
-\href{website:\%20http://zookeeper.sourceforge.net/}{Zookeeper} -- a
+Zookeeper -- a
 service for coordinating Hadoop's processes (ala Google's Chubby
 {[}Chubby{]}\_) , and Simon -- a cluster and application monitoring
 tool. Simon is similar to Ganglia, except it has more/better
@@ -4624,7 +4626,7 @@ aggregation.
 
 \subsection{Dryad}\label{dryad}
 
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad}
+Dryad
 {[}Dryad07{]}\_ is a system developed by Microsoft Research for
 executing distributed computations. It supports a more general
 computation model than MR in that it can execute graphs of operations,
@@ -4635,32 +4637,32 @@ database. The graph execution is optimized to take advantage of data
 locality if possible, with computation moving to the data. If non-local
 data is needed, it is transferred over the network.
 
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad}
+Dryad
 currently works on flat files. It is similar to Hadoop in this way.
 
 The core execution engine in
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad} has
+Dryad has
 been used in production for several years but not heavily. There are
 several integration pieces we might want (loading data from databases
 instead of files, tracking replicas of data) that do not yet exist.
 
 Beyond the execution engine,
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad} also
+Dryad also
 incorporates a simple per-node task scheduler inherited from elsewhere
 in Microsoft. It runs prioritized jobs from a queue.
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad} places
+Dryad places
 tasks on nodes based on the data available on the node and the state of
 the task queue on the node. A centralized scheduler might improve
 things, particularly when multiple simultaneous jobs are running; that
 is an area that is being investigated.
 
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad}
+Dryad
 requires that the localization or partitioning of data be exposed to it.
 It uses a relatively generic interface to obtain this metadata from an
 underlying filesystem, enabling it to talk to either a proprietary
 GFS-like filesystem or local disks.
 
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad} runs
+Dryad runs
 only on Windows .NET at present. Building the system outside of
 Microsoft is difficult because of dependencies on internal libraries;
 this situation is similar to the one with Google's GFS and Map/Reduce.
@@ -4669,19 +4671,19 @@ or another system, as its logic is not supposed to be terribly
 complicated. The performance-critical aspect of the system is the
 transfer of data between nodes, a task that Windows and Unix filesystems
 have not been optimized for and which
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad}
+Dryad
 therefore provides.
 
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad} has
+Dryad has
 been released as open source to academics/researchers in July 2009. This
 release however does not include any distributed filesystem for use with
 the system. Internally, Microsoft uses the
-\href{http://www.goland.org/whatiscosmos/}{Cosmos file system}, but it
+Cosmos file system\footnote{\url{http://www.goland.org/whatiscosmos/}}, but it
 is not available in the academic release. Instead there are bindings for
 NTFS and SQL Server.
 
 Microsoft dropped supporting
-\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad} back
+Dryad back
 in late 2011 {[}Zdnet{]}\_.
 
 \subsection{Dremel}\label{dremel}
@@ -4694,14 +4696,13 @@ architecture (executing query in parallel on many nodes in shared
 nothing architecture, auto fail over, replicating hot spots). Having
 said that, we do not have access to the source code, even though Google
 is an LSST collaborator, and there is
-\href{http://www.quora.com/How-will-Dremel-change-future-Hadoop-releases}{no
-corresponding open source alternative to date}.
+no corresponding open source alternative to date\footnote{\url{http://www.quora.com/How-will-Dremel-change-future-Hadoop-releases}}.
 
 \subsection{Tenzing}\label{tenzing}
 
 Tenzing is an SQL implementation on the MapReduce Framework
 {[}Chattopadhyay11{]}\_ We managed to obtain access to pre-published
-paper from Google through our \href{http://xldb.org}{XLDB} channels
+paper from Google through our XLDB channels
 several months before planned publication at the VLDB 2011 conference.
 
 Tenzing is a query engine built on top of MR for ad hoc analysis of
@@ -4721,8 +4722,8 @@ expose SQL interface to the user, and it recently evolved and refers to
 structured systems such as key-value stores or document stores. These
 systems tend to provide high availability at the cost of relaxed
 consistency (``eventual'' consistency). Today's key players include
-\href{http://cassandra.apache.org/}{Cassandra} and
-\href{http://www.mongodb.org/}{MongoDB}.
+Cassandra and
+MongoDB.
 
 While a key/value store might come handy in several places in LSST,
 these systems do not address many key needs of the project. Still, a
@@ -4779,31 +4780,31 @@ Viper, Viper2 and Cobra (XML) and pureScale (OLTP).
 
 \subsection{Drizzle}\label{drizzle}
 
-\href{http://drizzle.org/}{Drizzle} is a fork from the MySQL Database,
+Drizzle is a fork from the MySQL Database,
 the fork was done shortly after the announcement of the acquisition of
-MySQL by Oracle (April 2008). \href{http://drizzle.org/}{Drizzle} is
+MySQL by Oracle (April 2008). Drizzle is
 lighter than MySQL: most advanced features such as partitioning,
 triggers and many others have been removed (the code base was trimmed
 from over a million lines down to some 300K, it has also been well
-modularized). \href{http://drizzle.org/}{Drizzle}'s main focus is on the
+modularized). Drizzle's main focus is on the
 cloud market. It runs on a single server, and there are no plans to
 implement shared-nothing architecture. To achieve shared-nothing
-architecture, \href{http://drizzle.org/}{Drizzle} has hooks for an
+architecture, Drizzle has hooks for an
 opaque sharding key to be passed through client, proxy, server, and
 storage layers, but this feature is still under development, and might
 be limited to hash-based sharding.
 
 Default engine is InnoDB. MyISAM engine is not part of
-\href{http://drizzle.org/}{Drizzle}, it is likely MariaDB engine will
+Drizzle, it is likely MariaDB engine will
 become a replacement for MyISAM.
 
-\href{http://drizzle.org/}{Drizzle}'s first GA release occurred in March
+Drizzle's first GA release occurred in March
 2011.
 
-We have discussed the details of \href{http://drizzle.org/}{Drizzle}
-with key \href{http://drizzle.org/}{Drizzle} architects and developers,
+We have discussed the details of Drizzle
+with key Drizzle architects and developers,
 including Brian Aker (the chief architect), and most developers and
-users present at the \href{http://drizzle.org/}{Drizzle} developers
+users present at the Drizzle developers
 meeting in April 2008.
 
 \subsection{Greenplum}\label{greenplum}
@@ -5008,9 +5009,9 @@ There are several notable open-source forks of MySQL:
 \item
   Percona, which focuses on multi-core scaling
 \item
-  \href{http://drizzle.org/}{Drizzle}, which is aslimmed-down version,
+  Drizzle, which is aslimmed-down version,
   rewriten from scratch and no longer compatible with MySQL. Based on
-  discussions with the users, the \href{http://drizzle.org/}{Drizzle}
+  discussions with the users, the Drizzle
   effort has not picked up, and is slowly dying.
 \end{itemize}
 
@@ -5067,7 +5068,7 @@ replication. While its benefits are not obvious for our data access
 center, rapid inserts might be useful for Level 1 data sets (Alert
 Production). We have been in touch with the Tokutek team for several
 years, the key designers of the Fractal Tree index gave a detailed
-tutorial at the \href{http://xldb.org}{XLDB}-2012 conference we
+tutorial at the XLDB-2012 conference we
 organized.
 
 The engine was made open source in Apr 2013.
@@ -5239,8 +5240,8 @@ speed interconnect(Infiniband).
 
 \subsection{Sybase IQ}\label{sybase-iq}
 
-\href{}{Sybase IQ} is a commercial columnar database product by Sybase
-Corp. \href{}{Sybase IQ} utilizes a ``shared-everything'' approach that
+Sybase IQ is a commercial columnar database product by Sybase
+Corp. Sybase IQ utilizes a ``shared-everything'' approach that
 designed to provide graceful load-balancing. We heard opinions that most
 of the good talent has left the company; thus it is unlikely it will be
 a major database player.
@@ -5296,7 +5297,7 @@ parser, cluster management and task management.
 management}\label{cluster-and-task-and-management}
 
 Two primary candidates to use as cluster and task management we
-identified so far are Gearman and \href{http://xrootd.org}{XRootD}.
+identified so far are Gearman and XRootD.
 Cluster management involves keeping track of available nodes, allowing
 nodes to be added/removed dynamically. Task management involves
 executing tasks on the nodes.
@@ -5306,27 +5307,27 @@ Detailed requirements what we need are captured at:
 
 \paragraph{Gearman}\label{gearman}
 
-\href{http://gearman.org/}{Gearman} is a distributed job execution
+Gearman \citep{Gearman} is a distributed job execution
 system, available as open source. It provides task management functions,
 e.g., cluster management is left out to be handled in application code.
 
 During a meeting setup in June 2009 with Eric Day, the key developer
-working on integration of \href{http://drizzle.org/}{Drizzle} with
-\href{http://gearman.org/}{Gearman}, who also wrote the C++ version of
-\href{http://gearman.org/}{Gearman}, we discussed details of
-\href{http://gearman.org/}{Gearman} architecture and its applicability
+working on integration of Drizzle with
+Gearman, who also wrote the C++ version of
+Gearman, we discussed details of
+Gearman architecture and its applicability
 for LSST.
 
-\href{http://gearman.org/}{Gearman} manages workers as resources that
+Gearman manages workers as resources that
 provide RPC execution capabilities. It is designed to provide scalable
 access to many resources that can provide similar functionality (e.g.,
 compress an image, retrieve a file, perform some expensive computation).
 While we could imagine a scheme to use
-\href{http://gearman.org/}{Gearman}'s dispatch system, its design did
+Gearman's dispatch system, its design did
 not match LSST's needs well. One problem was its store-and-forward
 approach to arguments and results, which would mean that the query
 service would need to implement its own side transmission channel or
-potentially flood the \href{http://gearman.org/}{Gearman} coordinator
+potentially flood the Gearman coordinator
 with bulky results.
 
 \section{Appendix C: Tests with
@@ -5988,18 +5989,18 @@ Solution providers of considered products:
   Map/Reduce -- key developers from Google
 \item
   Hadoop -- key developers from Yahoo!, founders and key developers
-  behind Cloudera and \href{http://www.hortonworks.com/}{Hortonworks},
+  behind Cloudera and Hortonworks,
   companyies supporting enterprise edition of Hadoop
 \item
-  \href{http://wiki.apache.org/hadoop/Hive}{Hive} -- key developers from
+  Hive -- key developers from
   Facebook.
 \item
-  \href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad} --
+  Dryad --
   key developers from Microsoft
-  (\href{http://research.microsoft.com/en-us/projects/dryad/}{Dryad} is
+  Dryad is
   Microsofts's version of map/reduce), including Michael Isard
 \item
-  \href{http://gearman.org/}{Gearman} -- key developers (gearman is a
+  Gearman -- key developers (gearman is a
   system which allows to run MySQL in a distributed fashion)
 \item
   representatives from all major database vendors, including Teradata,
@@ -6048,9 +6049,5 @@ Leading database researchers
 \item
   M Kersten
 \end{itemize}
-
-% Include all the relevant bib files.
-% https://lsst-texmf.lsst.io/lsstdoc.html#bibliographies
-\bibliography{lsst,lsst-dm,refs_ads,refs,books}
 
 \end{document}
