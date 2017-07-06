@@ -105,8 +105,8 @@ trade-offs, applicability of technologies such as solid state disks,
 ingest techniques and others. We ran many tests to determine the design
 configuration, determine limits and uncover potential bottlenecks. In
 particular, we chose \emph{MySQL} as our baseline open source,
-single-node DBMS and XRootD \citep{XRootD} as an open source,
-elastic, distributed, fault-tolerant messaging system.
+single-node DBMS and XRootD\footnote{\url{http://xrootd.org}} \citep{Dorigo:2005:XRootd}
+as an open source, elastic, distributed, fault-tolerant messaging system.
 
 We developed a prototype of the baseline architecture, called
 \emph{Qserv}. To mitigate major risks, such as insufficient scalability
@@ -145,7 +145,7 @@ based on MonetDB instead of MySQL was done in 2012. Further, to stay
 current with the state-of-the-art in peta-scale data management and
 analysis, we continue a dialog with all relevant solution providers,
 both DBMS and Map/Reduce, as well as with data-intensive users, both
-industrial and scientific, through the XLDB \citep{XLDB}
+industrial and scientific, through the XLDB\footnote{\url{https://xldb.org}}
 conference series we lead, and beyond.
 
 \section{Introduction}\label{introduction}
@@ -694,7 +694,7 @@ set of production pipelines:
   Since alerts need to be generated in under a minute after data has
   been taken, data has to be ingested/updated in almost-real time. The
   number of row updates/ingested is modest: \textasciitilde{}40K new
-  rows and updates occur every \textasciitilde{}39 sec \citep{Becla07}.
+  rows and updates occur every \textasciitilde{}39 sec \citep{2008ASPC..394..114B}.
 \item
   Calibration Pipeline -- it produces calibration information. Due to
   small data volume and no stringent timing requirements, ingest
@@ -1264,7 +1264,7 @@ beta would suffice, beginning of production scalability approaching few
 hundred terabytes would be sufficient). Database systems larger than the
 largest single LSST data set have been successfully demonstrated in
 production today. For example, eBay manages a 10+ petabyte production
-database \citep{dbms210} and expects to deploy a 36 petabyte system
+database \citep{Monash:2010:ebay} and expects to deploy a 36 petabyte system
 later in 2011. For comparison, the largest single LSST data set,
 including all indexes and overheads is expected to be below 10 petabytes
 in size, and will be produced \textasciitilde{}20 years from now (the
@@ -1287,7 +1287,9 @@ purchased by Oracle, leading to doubts as to whether the MySQL project
 will be sufficiently supported in the long-term. Since the purchase,
 several independent forks of MySQL software have emerged, including
 MariaDB (supported by one of the MySQL founders),
-Drizzle \citep{Drizzle} (supported by key architects of
+Drizzle\footnote{Now abandoned:
+\url{https://en.wikipedia.org/wiki/Drizzle_\%28database_server\%29}}
+(supported by key architects of
 MySQL), and Percona. Should MySQL disappear, these open-source,
 MySQL-compatible\footnote{With the exception of
   Drizzle, which introduced major changes to
@@ -2816,7 +2818,7 @@ possible.
   use cases that would benefit from a system that tracks objects based
   on their footprint, this is currently not a requirement. Potential
   solution would involve adding a custom index similar to the
-  r-tree-based indexes such as the TOUCH \citep{Nobari13}.
+  r-tree-based indexes such as the TOUCH \citep{Nobari:2013:TIS:2463676.2463700}.
 \item
   \textbf{Very large results}. Currently, the front-end that disptached
   the query is responsible for assembling the results. In general, this
@@ -3325,7 +3327,7 @@ The rectangular fragmentation in right ascension and declination, while
 convenient to visualize physically for humans, is problematic due to
 severe distortion near the poles. We are exploring the use of a
 hierarchical scheme, such as the hierarchical triangular mesh
-\citep{Kunszt} for partitioning and spatial indexing. These schemes can
+\citep{2001misk.conf..631K} for partitioning and spatial indexing. These schemes can
 produce partitions with less variation in area, and map spherical points
 to integer identifiers encoding the points' partitions at many
 subdivision levels. Interactive queries with very small spatial extent
