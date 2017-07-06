@@ -150,16 +150,16 @@ conference series we lead, and beyond.
 
 \section{Introduction}\label{introduction}
 
-This document discusses the LSST database system architecture. Chapter~\ref{baseline-architecture} discusses the baseline
-architecture. Chapter~\ref{requirements} explains the LSST database-related
+This document discusses the LSST database system architecture. \secref{baseline-architecture} discusses the baseline
+architecture. \secref{requirements} explains the LSST database-related
 requirements.
-Chapter~\ref{design-trade-offs} discusses design trade-offs
+\secref{design-trade-offs} discusses design trade-offs
 and decision process, including small scale tests we run.
-Chapter~\ref{risk-analysis} covers risk analysis.
-Chapter~\ref{implementation} discusses the
+\secref{risk-analysis} covers risk analysis.
+\secref{implementation} discusses the
 prototype design (Qserv), including design, current status of the
 software and future plans.
-Chapters~\ref{large-scale-testing} and \ref{other-demonstrations}
+\secref{large-scale-testing} and \secref{other-demonstrations}
 describe large scale Qserv
 tests and demonstrations.
 For some additional background, \citeds{DMTN-046} covers in-depth analysis
@@ -167,12 +167,12 @@ of off-the-shelf potential solutions (Map/Reduce and RDBMS) as of 2013.
 
 \section{Baseline Architecture}\label{baseline-architecture}
 
-This chapter describes the most important aspects of the LSST baseline
+This section describes the most important aspects of the LSST baseline
 database architecture. The choice of the architecture is driven by the
 project requirements (see reqs) as well as cost, availability and
 maturity of the off-the-shelf solutions currently available on the
 market (see \citeds{DMTN-046}), and design trade-offs (see
-Chapter~\ref{design-trade-offs}). The architecture is periodically revisited: we
+\secref{design-trade-offs}). The architecture is periodically revisited: we
 continuously monitor all relevant technologies, and accordingly
 fine-tune the baseline architecture.
 
@@ -917,7 +917,7 @@ The LSST database design involves many architectural choices. Example of
 architectural decisions we faced include how to partition the tables,
 how many levels of partitioning is needed, where to use an index, how to
 normalize the tables, or how to support joins of the largest tables.
-This chapter covers the test we run to determine the optimal
+This section covers the test we run to determine the optimal
 architecture of MySQL-based system.
 
 \subsection{Standalone Tests}\label{standalone-tests}
@@ -1152,7 +1152,7 @@ association, DC3 is demonstrating catalog construction and DC4 will
 demonstrate the end user query/L3 data production.
 
 In addition to DC-related tests, we are running standalone tests,
-described in detail in Chapter~\ref{large-scale-testing}.
+described in detail in \secref{large-scale-testing}.
 
 \subsubsection{DC1: data ingest}\label{dc1-data-ingest}
 
@@ -1405,7 +1405,7 @@ off-the-shelf system in time for LSST construction, we built a prototype
 system for user query access, called \emph{Query Service} (Qserv). The
 system relies on two production-quality components: MySQL and
 XRootD. The prototype closely follows the LSST
-baseline database architecture described in chapter 3
+baseline database architecture described in \secref{baseline-architecture}.
 
 \subsection{Components}\label{components}
 
@@ -2292,7 +2292,7 @@ be kept on dedicated disks, independent from the disks serving Level 2
 data. This will simplify maintenance and recoverability from failures.
 
 Level 3 tables will be tracked and managed through the Qserv Metadata
-System (qms), described in the \emph{Metadata} chapter above. This
+System (qms), described in \secref{metadata}. This
 includes both the static, as well as the dynamic metadata.
 
 \subsection{Cluster and Task
