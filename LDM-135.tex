@@ -609,7 +609,7 @@ data. Not having to deal with updates simplifies the architecture and
 allows us to add extra optimizations not possible otherwise. The Level 1
 data which is updated is small enough and will not require the scalable
 architecture -- we plan to handle all Level 1 data set with out-of-the
-box MySQL as described in alert-production.
+box MySQL as described in \secref{alert-production-and-up-to-date-catalog}.
 
 \subsubsection{Long-running queries}\label{long-running-queries}
 
@@ -1297,7 +1297,7 @@ partial query results to end users.
 
 ABH In 2012, a new XRootD client API was
 developed to address our concerns over the older version's scalability
-(uncovered during a 150 node, 30TB scalability test). The new client API
+(uncovered during a 150 node, 30TB scalability test \citedsp{DMTR-21}). The new client API
 began production use for the broader XRootD
 community in late 2012. Subsequently, work began under our guidance
 towards an XRootD Qserv client API that was
@@ -1362,7 +1362,7 @@ CPU cores in the system, but if it has many queries that involve
 different chunk tables, it allows fewer simultaneous chunk queries in
 order to ensure that only one table scan per disk spindle occurs.
 Further discussion of this ``shared scanning'' feature is described in
-shared-scans.
+\citeds{DMTN-048}.
 
 \subsection{Threading Model}\label{threading-model}
 
