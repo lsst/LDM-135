@@ -475,13 +475,13 @@ synchronized scans are required for two-way joins between different
 tables. For a self-joins, a single shared scans will be sufficient,
 however each node must have sufficient memory to hold 2 chunks at any
 given time (the processed chunk and next chunk). Refer to the sizing
-model {[}LDM-141{]}\_ for further details on the cost of shared scans.
+model \citedsp{LDM-141} for further details on the cost of shared scans.
 
 Low-volume queries will be executed ad-hoc, interleaved with the shared
 scans. Given the number of spinning disks is much larger than the number
 of low-volume queries running at any given time, this will have very
 limited impact on the sequential disk I/O of the scans, as shown in
-{[}LDM-141{]}\_.
+\citeds{LDM-141}.
 
 \subsubsection{Clustering}\label{clustering}
 
@@ -666,7 +666,7 @@ sizes for the largest database catalogs (for the last data release,
 uncompressed, data only) are captured in
 the table below \textless{}tab-expected-catalog-size\textgreater{}. For
 further storage, disk and network bandwidth and I/O analyses, see
-{[}LDM-141{]}\_.
+\citeds{LDM-141}.
 
 \textbf{Reliability}. The system must not lose data, and it must provide
 at least 98\% up time in the face of hardware failures, software
@@ -694,7 +694,7 @@ set of production pipelines:
   Since alerts need to be generated in under a minute after data has
   been taken, data has to be ingested/updated in almost-real time. The
   number of row updates/ingested is modest: \textasciitilde{}40K new
-  rows and updates occur every \textasciitilde{}39 sec {[}Becla07{]}\_.
+  rows and updates occur every \textasciitilde{}39 sec \citep{Becla07}.
 \item
   Calibration Pipeline -- it produces calibration information. Due to
   small data volume and no stringent timing requirements, ingest
@@ -882,7 +882,7 @@ patterns}\label{query-complexity-and-access-patterns}
 
 A compilation of representative queries provided by the LSST Science
 Collaborations, the Science Council, and other surveys have been
-captured {[}common-queries{]}\_. These queries can be divided into
+captured \citep{CommonQueries}. These queries can be divided into
 several distinct groups: analysis of a single object, analysis of
 objects meeting certain criteria in a region or across entire sky,
 analysis of objects close to other objects, analysis that require
@@ -934,8 +934,8 @@ non clustered), precalculating various values (like
 tests for all reasonable table sizes (using MySQL and PostgreSQL). We
 measured CPU and disk I/O to estimate impact on hardware. In addition,
 we re-run these tests on the lsst10 machine at NCSA to understand what
-performance we may expect there for DC3b. These tests are documented at
-\url{http://dev.lsstcorp.org/trac/wiki/db/SpatialJoinPerf}. We found
+performance we may expect there for DC3b. These tests are documented in
+\citep{spatial-join}. We found
 that PostgreSQL was 3.7x slower for spatial joins over a range of row
 counts, and reducing the row-count per partition to less than 5k rows
 was crucial in achieving lowering compute intensity, but that predicate
@@ -1099,7 +1099,7 @@ a single partition.
 Proposed partitioning scheme will involve partitioning each large table
 into a ``reasonable'' number of partitions, typically measured in low
 tens of thousands. Details analysis are done in the storage spreadsheet
-({[}LDM-141{]}\_). Should we need to, we can partition the largest
+\citedsp{LDM-141}. Should we need to, we can partition the largest
 tables into larger number of smaller partitions, which would reduce
 partition size. Given the hardware available and our time constraints,
 so far we have run tests with up to 10 million row partition size.
@@ -1126,7 +1126,7 @@ an index (objectId or spatial) in well under 10 sec.
 
 We also run a series of tests with solid state disks to determine where
 it would be most cost-efficient to use solid state disks. The tests are
-described in details in {[}Docushare-11701{]}\_. We found that
+described in details in \citeds{Document-11701}. We found that
 concurrent query execution is dominated by software inefficiencies when
 solid-state devices (SSDs) with fast random I/O are substituted for slow
 disks. Because the cost per byte is higher for SSDs, spinning disks are
@@ -1164,7 +1164,7 @@ both cases we tried different storage engines, including MyISAM and
 InnoDB. Through these tests we determined the overhead introduced by
 MySQL is small (acceptable). Building indexes for large tables is slow,
 and requires making a full copy of the involved table. These tests are
-described in details in Docushare Document-1386. We found that as long
+described in details in \citeds{Document-1386}. We found that as long
 as indexes are disabled during loading, ingest speed is typically CPU
 bound due to data conversion from ASCII to binary format. We also found
 that ingest into InnoDB is usually \textasciitilde{}3x slower than into
@@ -1246,7 +1246,7 @@ at \url{https://dev.lsstcorp.org/trac/wiki/db/MySQL/Optimizations}.
 \subsection{Potential Key Risks}\label{potential-key-risks}
 
 Insufficient \textbf{database performance and scalability} is one of the
-major risks {[}Docushare-7025{]}\_.
+major risks \citedsp{Document-7025}.
 
 We have a prototype system (\emph{Qserv}) that will be turned into a
 production system. Given that a large fraction of its functionality is
@@ -1264,7 +1264,7 @@ beta would suffice, beginning of production scalability approaching few
 hundred terabytes would be sufficient). Database systems larger than the
 largest single LSST data set have been successfully demonstrated in
 production today. For example, eBay manages a 10+ petabyte production
-database {[}dbms210{]}\_ and expects to deploy a 36 petabyte system
+database \citep{dbms210} and expects to deploy a 36 petabyte system
 later in 2011. For comparison, the largest single LSST data set,
 including all indexes and overheads is expected to be below 10 petabytes
 in size, and will be produced \textasciitilde{}20 years from now (the
@@ -1377,10 +1377,10 @@ we lead, and beyond.
 To understand query complexity and expected access patterns, we are
 working with LSST Science Collaborations and the LSST Science Council to
 understand the expected query load and query complexity. We have
-compiled a set of common queries {[}common-queries{]}\_ and distilled
+compiled a set of common queries \citep{CommonQueries} and distilled
 this set into a smaller set of representative queries we use for various
 scalability tests--this set represents each major query type, ranging
-from trivial low volume, to complex correlations. {[}perftests{]}\_. We
+from trivial low volume, to complex correlations \citep{PerfTests}. We
 have also talked to scientists and database developers from other
 astronomical surveys, including SDSS, 2MASS, Gaia, DES, LOFAR and
 Pan-STARRS.
@@ -1851,8 +1851,8 @@ need to be migrated to new hardware in bulk.
 
 Should an entire node fail, replicating that data to another single node
 would be fairly expensive in terms of time. As of July 2013, a 3TB drive
-will have a write speed of 60/150/100 MB/s (min/max/avg),
-{[}\url{http://www.legitreviews.com/article/2092/3/}{]} and refilling
+will have a write speed of 60/150/100 MB/s (min/max/avg) \citep{Kirsch:2012}
+and refilling
 this single drive would remove access to that replica of the data for
 about 8 hours. We plan on having free space on each node, and only fill
 local storage to 80\%. The free space will be used for temporary storage
@@ -2816,7 +2816,7 @@ possible.
   use cases that would benefit from a system that tracks objects based
   on their footprint, this is currently not a requirement. Potential
   solution would involve adding a custom index similar to the
-  r-tree-based indexes such as the TOUCH {[}67{]}.
+  r-tree-based indexes such as the TOUCH \citep{Nobari13}.
 \item
   \textbf{Very large results}. Currently, the front-end that disptached
   the query is responsible for assembling the results. In general, this
@@ -2842,7 +2842,7 @@ possible.
 
 Based on the detailed spreadsheet analysis, we expect the ultimate LSST
 production system will be composed of few hundred database servers
-{[}LDM-144{]}\_, so a realistic test should include a cluster of at
+\citedsp{LDM-144}, so a realistic test should include a cluster of at
 least 100 nodes.
 
 Total database size of a single data release will vary from
@@ -2923,7 +2923,7 @@ We have run several large scale tests
   nodes, each node: two Intel Xeon 2.4 GHz GPUs with 4 GB RAM and 1
   local hard disk of 80 Gbs)
 \item
-  (2010) several 100-node tests run at SLAC {[}58{]}. These tests helped
+  (2010) several 100-node tests run at SLAC \citep{slac-test}. These tests helped
   us uncover many bottlenecks and prompted rewriting parts of our
   software, as well as implementing several missing features in
   XRootD.
@@ -2979,7 +2979,7 @@ spatial distance and density by a non-linear transformation of
 right-ascension as a function of declination. This resulted in an Object
 table of 1.7 billion rows (2TB) and a Source table of 55 billion rows
 (30 TB).\footnote{Source for the duplicator is available at
-  \url{http://dev.lsstcorp.org/trac/browser/DMS/qserv/master/trunk/examples}}
+  \url{https://github.com/lsst/qserv/blob/master/admin/python/lsst/qserv/admin/dataDuplicator.py}}
 The Source table included only data between -54˚ and +54˚ in
 declination. The polar portions were clipped due to limited disk space
 on the test cluster. Partitioning was set for 85 stripes each with 12
@@ -3325,7 +3325,7 @@ The rectangular fragmentation in right ascension and declination, while
 convenient to visualize physically for humans, is problematic due to
 severe distortion near the poles. We are exploring the use of a
 hierarchical scheme, such as the hierarchical triangular mesh
-{[}Kunszt{]}\_ for partitioning and spatial indexing. These schemes can
+\citep{Kunszt} for partitioning and spatial indexing. These schemes can
 produce partitions with less variation in area, and map spherical points
 to integer identifiers encoding the points' partitions at many
 subdivision levels. Interactive queries with very small spatial extent
