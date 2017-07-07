@@ -603,7 +603,7 @@ few assumptions as possible about what will be important to our users,
 and to try and provide reasonable performance for as broad a query load
 as possible, i.e. focus on scan throughput rather than optimizing
 indexes. A further benefit to this approach is that many different
-queries are likely to be able to share scan IO, boosting system
+queries are likely to be able to share scan I/O, boosting system
 throughput, whereas caching index lookup results is likely to provide
 far fewer opportunities for sharing as the query count scales (for the
 amounts of cache we can afford).
@@ -625,7 +625,7 @@ heavily in favor of compression.
 
 Shared scanning will be used for all high-volume and super-high volume
 queries. Shared scanning is helpful for unpredictable, ad-hoc analysis,
-where it prevents the extra load from increasing the disk /IO cost --
+where it prevents the extra load from increasing the disk I/O cost --
 only more CPU is needed. On average we expect to continuously run the
 following scans:
 
