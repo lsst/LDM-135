@@ -430,66 +430,66 @@ architecture of the entire system.
 \section{Baseline Architecture}\label{baseline-architecture}
 
 This section describes the most important aspects of the LSST baseline
-database architecture. The choice of the architecture is driven by the
-project requirements (see \citeds{LDM-555}) as well as cost, availability and
-maturity of the off-the-shelf solutions currently available on the
-market (see \citeds{DMTN-046}), and design trade-offs (see
-\citeds{DMTN-048}). The architecture is periodically revisited: we
-continuously monitor all relevant technologies, and accordingly
-fine-tune the baseline architecture.
+database architecture. The choice of the architecture is driven by the project
+requirements (see \citeds{LDM-555}) as well as cost, availability, and
+maturity of the off-the-shelf solutions currently available on the market (see
+\citeds{DMTN-046}), and design trade-offs (see \citeds{DMTN-048}). The
+architecture is periodically revisited: we continuously monitor all relevant
+technologies, and accordingly fine-tune the baseline architecture.
 
-In summary, the LSST baseline architecture for Alert Production is an
-off-the-shelf RDBMS system which uses replication for fault tolerance
-and which takes advantage of horizontal (time-based) partitioning. The
-baseline architecture for user access to Data Releases is an MPP
-(multi-processor, parallel) relational database running on a
-shared-nothing cluster of commodity servers with locally attached
-spinning disk drives; capable of (a) incremental scaling and (b)
-recovering from hardware failures without disrupting running queries.
-All large catalogs are spatially partitioned into materialized
-\emph{chunks}, and the remaining catalogs are replicated on each server;
-the chunks are distributed across all nodes. The Object catalog is
-further partitioned into \emph{sub-chunks} with overlaps,\footnote{A
+In summary:
+
+\begin{itemize}
+\item
+  The LSST baseline architecture for Alert Production is an off-the-shelf
+  RDBMS system which uses replication for fault tolerance and which takes
+  advantage of horizontal (time-based) partitioning;
+\item
+  The baseline architecture for user access to Data Releases is an MPP
+  (multi-processor, parallel) relational database running on a
+  shared-nothing cluster of commodity servers with locally attached
+  spinning disk drives; capable of (a) incremental scaling and (b)
+  recovering from hardware failures without disrupting running queries.
+  All large catalogs are spatially partitioned into materialized
+  \emph{chunks}, and the remaining catalogs are replicated on each server;
+  the chunks are distributed across all nodes. The Object catalog is
+  further partitioned into \emph{sub-chunks} with overlaps,\footnote{A
   chunk's overlap is implicitly contained within the overlaps of its
   edge sub-chunks.} materialized on-the-fly when needed. Shared scans
-are used to answer all but low-volume user queries. Details follow
-below.
+  are used to answer all but low-volume user queries.
+\end {itemize}
 
-\subsection{Alert Production and Up-to-date
-Catalog}\label{alert-production-and-up-to-date-catalog}
+\subsection{Alert Production and Up-to-date Catalog}\label{alert-production-and-up-to-date-catalog}
 
-Alert Production involves detection and measurement of
-difference-image-analysis sources (DiaSources). New DiaSources are
-spatially matched against the most recent versions of existing
-DiaObjects, which contain summary properties for variable and transient
-objects (and false positives). Unmatched DiaSources are used to create
-new DiaObjects. If a DiaObject has an associated DiaSource that is no
-more than a month old, then a forced measurement (DiaForcedSource) is
-taken at the position of that object, whether a corresponding DiaSource
-was detected in the exposure or not.
+Alert Production involves detection and measurement of difference-image-
+analysis sources (DiaSources). New DiaSources are spatially matched against
+the most recent versions of existing DiaObjects, which contain summary
+properties for variable and transient objects (and false positives). Unmatched
+DiaSources are used to create new DiaObjects. If a DiaObject has an associated
+DiaSource that is no more than a month old, then a forced measurement
+(DiaForcedSource) is taken at the position of that object, whether a
+corresponding DiaSource was detected in the exposure or not.
 
-The output of Alert Production consists mainly of three large catalogs
--- DiaObject, DiaSource, and DiaForcedSource - as well as several
-smaller tables that capture information about e.g. exposures, visits and
-provenance.
+The output of Alert Production consists mainly of three large catalogs --
+DiaObject, DiaSource, and DiaForcedSource - as well as several smaller tables
+that capture information about e.g. exposures, visits and provenance.
 
 These catalogs will be modified live every night. After Data Release
-Production has been run based on the first six months of data and each
-year's data thereafter, the live Level 1 catalogs will be archived to
-tape and replaced by the catalogs produced by DRP. The archived catalogs
-will remain available for bulk download, but not for queries.
+Production has been run based on the first six months of data and each year's
+data thereafter, the live Level 1 catalogs will be archived to tape and
+replaced by the catalogs produced by DRP. The archived catalogs will remain
+available for bulk download, but not for queries.
 
-Note that existing DiaObjects are never overwritten. Instead, new
-versions of the AP-produced and DRP-produced DiaObjects are inserted,
-allowing users to retrieve (for example) the properties of DiaObjects as
-known to the pipeline when alerts were issued against them. To enable
-historical queries, each DiaObject row is tagged with a validity start
-and end time. The start time of a new DiaObject version is set to the
-observation time of the DiaSource or DiaForcedSource that led to its
-creation, and the end time is set to infinity. If a prior version
-exists, then its validity end time is updated (in place) to equal the
-start time of the new version. As a result, the most recent versions of
-DiaObjects can always be retrieved with:
+Note that existing DiaObjects are never overwritten. Instead, new versions of
+the AP-produced and DRP-produced DiaObjects are inserted, allowing users to
+retrieve (for example) the properties of DiaObjects as known to the pipeline
+when alerts were issued against them. To enable historical queries, each
+DiaObject row is tagged with a validity start and end time. The start time of
+a new DiaObject version is set to the observation time of the DiaSource or
+DiaForcedSource that led to its creation, and the end time is set to infinity.
+If a prior version exists, then its validity end time is updated (in place) to
+equal the start time of the new version. As a result, the most recent versions
+of DiaObjects can always be retrieved with:
 
 \begin{lstlisting}[language=SQL]
 SELECT * FROM DiaObject WHERE validityEnd = infinity
@@ -502,18 +502,17 @@ SELECT * FROM DiaObject WHERE validityStart <= t AND t < validityEnd
 \end{lstlisting}
 
 Note that a DiaSource can also be re-associated to a solar-system object
-during day time processing. This will result in a new DiaObject version
-unless the DiaObject no longer has any associated DiaSources. In that
-case, the validity end time of the existing version is set to the time
-at which the re-association occurred.
+during day time processing. This will result in a new DiaObject version unless
+the DiaObject no longer has any associated DiaSources. In that case, the
+validity end time of the existing version is set to the time at which the re-
+association occurred.
 
 Once a DiaSource is associated with a solar system object, it is never
 associated back to a DiaObject. Therefore, rather than also versioning
-DiaSources, columns for the IDs of both the associated DiaObject and
-solar system object, as well as a re-association time, are included.
-Re-association will set the solar system object ID and re-association
-time, so that DiaSources for DiaObject 123 at time \emph{t} can be
-obtained using:
+DiaSources, columns for the IDs of both the associated DiaObject and solar
+system object, as well as a re-association time, are included. Re-association
+will set the solar system object ID and re-association time, so that
+DiaSources for DiaObject 123 at time \emph{t} can be obtained using:
 
 \begin{lstlisting}[language=SQL]
 SELECT *
@@ -526,8 +525,8 @@ AND (ssObjectId is NULL OR ssObjectReassocTime > t)
 DiaForcedSources are never re-associated or updated in any way.
 
 From the database point of view then, the alert production pipeline will
-perform the following database operations 189 times (once per LSST CCD)
-per visit (every 39 seconds):
+perform the following database operations 189 times (once per LSST CCD) per
+visit (every 39 seconds):
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -893,16 +892,14 @@ mode.
 
 \subsubsection{Technology choice}\label{technology-choice}
 
-As explained in \citeds{DMTN-046},
-no off-the-shelf solution meets the above requirements today, an RDBMS
-seems a much better fit than a Map/Reduce-based system, primarily due to
-features such as indexes, schema and speed. For that reason, our
-baseline architecture consists of \emph{custom} software built on two
-production components: an open source, ``simple'', single-node,
-non-parallel DBMS (MySQL) and XRootD. To ease
-potential future DBMS migrations, the communication with the underlying
-DBMS relies on \emph{basic} DBMS functionality only, and avoids
-vendor-specific features and additions.
+As explained in \citeds{DMTN-046}, no off-the-shelf solution meets the above
+requirements today, and an RDBMS seems a much better fit than a Map/Reduce-
+based system primarily due to features such as indexes, schema, and speed. For
+that reason, our baseline architecture consists of \emph{custom} software
+built on two production components: an open source, ``simple'', single-node,
+non-parallel DBMS (MySQL) and XRootD. To ease potential future DBMS
+migrations, the communication with the underlying DBMS relies on \emph{basic}
+DBMS functionality only, and avoids vendor-specific features and additions.
 
 \begin{figure}[H]
 \centering
@@ -912,11 +909,12 @@ vendor-specific features and additions.
 
 \section{Implementation (Qserv)}\label{implementation}
 
-An prototype implementation of the baseline architecture described above was
-developed during the RD phase of LSST, and feasibility was demonstrated
-in early testing (\citeds{DMTR-21}, \citeds{DMTR-12}). Productization was
-subsequently planned and resourced for the construction phase of LSST and is
-presently underway.  The system as currently implemented is described here.
+A prototype implementation of the baseline architecture for user query
+access described above, \emph{Qserv}, was developed during the R\&D phase of
+LSST, and its feasibility was demonstrated in early testing (\citeds{DMTR-21},
+\citeds{DMTR-12}). Productization was subsequently planned and resourced for
+the construction phase of LSST and is presently underway.  The system as
+currently implemented is described here.
 
 \subsection{Components}\label{components}
 
