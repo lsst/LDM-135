@@ -900,7 +900,7 @@ between them.
 \subsection{Query Generation}\label{query-generation}
 
 Qserv is unusual (though not unique) in processing a user query into one or
-more queriy fragments that are subsequently distributed to and executed by
+more query fragments that are subsequently distributed to and executed by
 off-the-shelf single-node RDBMS software. This is done in the hopes of
 providing a distributed parallel query service while avoiding a full re-implementation
 of common database features. However, we have found that it is
@@ -923,11 +923,11 @@ Once the intermediate representation has been created, it is processed by two
 sequences of modules. The first sequence operates on the query as a single
 statement. A transformation step occurs to split the single representation
 into a ``plan'' involving multiple phases of execution, one to be executed
-per-data-chunk, and a one to be executed to combine the distributed results
+per-data-chunk, and one to be executed to combine the distributed results
 into final user results. A second sequence is then applied on this plan to
 apply the necessary transformations for an accurate result.
 
-We have found that regular expressions and parse element handlers to be
+We have found that regular expressions and parse element handlers are
 insufficient to analyze and manipulate queries for anything beyond the
 most basic query syntax constructions.
 
