@@ -2292,217 +2292,166 @@ through Qserv, and compare results.
 \subsection{Current Status and Future
 Plans}\label{current-status-and-future-plans}
 
-As of now (June 2013) we have implemented a basic version of the system
-end-to-end. Our prototype is capable of parsing a wide range of queries,
-including queries executed by our QA system, ``PipeQA'', rewriting them
-into sub-queries, executing these sub-queries in parallel and returning
-results to the user. The implementation includes a generic parser, basic
-query scheduler, job executor, query result collector. We demonstrated
-running all query types (low, high, super-high such as large-area
-near-neighbor) including aggregations, scalably on a 150-node cluster
-using 30 TB data set \citedsp{DMTR-21}; and a smaller subset of queries scalably on
-300-node cluster \citedsp{DMTR-12} (remaining tests in progress, expecting to complete in
-the next 2-3 weeks) we also demonstrated the system performs well enough
-to meet the LSST query response time requirements. We demonstrated the
-system can handle high-level of concurrency (10 concurrent queries
-simultaneously accessing 10,000 chunks each). We demonstrated the system
-can recover from a variety of faults, or at minimum gracefully fail if
-the error is unrecoverable. We extended SQL syntax coverage and ensured
-the system is capable of supporting all types of queries executed over
-the course of recent data challenges by PipeQA and users. We implemented
-a core foundation for the metadata, currently used for managing static
-metadata about Qserv-managed databases and tables, a set of
-administrative tools, and scalable data partitioner. We made the system
-easy to set up, resilient to typical failures and common user mistakes.
-We implemented automated test bed. We consider the current prototype to
-have a quality of a typical late-alpha / early-beta software.
+As of now (July 2017) we have implemented a basic version of Qserv end-to-end,
+and maintain three running instances at a scale of approximately 30 physical
+nodes each in continuous operation on dedicated hardware clusters at NCSA and
+CC-IN2P3.
 
-Future work includes:
+The system has been demonstrated to correctly distribute and execute both low
+and high volume queries, including small-area cone and object searches, region
+restricted queries, and full table scans including large-area near-neighbor
+searches.  Analytic queries involving SciSQL UDFs in both filter and
+aggregation clauses have also been demonstrated.
+
+Scale testing has been successfully conducted \footnote{See Qserv test reports
+\citeds{DMTR-21}, \citeds{DMTR-12}, \citeds{DMTR-13}, and \citeds{DMTR-16}
+(most recent).} on the above-mentioned clusters with datasets of up to
+approximately 70 TB, and we expect to cross the 100 TB mark as tests continue
+in 2017.  To date the system is on track through a series of graduated data-
+challenge style tests \citedsp{LDM-552} to meet or exceed the stated
+performance requirements for the project \citedsp{LDM-555}.
+
+The shared-scan implementation is substantially complete, and functions per
+design to enable high levels of concurrency without degraded full-scan query
+performance.
+
+A metadata system, as described above, for both static and dynamic metadata is
+in place, and basic query management facilities (query cancellation and
+monitoring) have been implemented.
+
+The system is currently containerized (Docker) for cluster deployment, and
+includes a comprehensive set of unit and regression tests that are integrated
+with the build and CI systems.
+
+In addition to background ongoing effort to improve query performance and
+extend query coverage, future implementation work includes:
 
 \begin{itemize}
 \item
-  extending metadata to support run-time statistics, implementing query
-  management tools
+  automatic data distribution and replication;
 \item
-  implementing support for Level 3 data
+  improved query management and monitoring tools;
 \item
-  completing initial shared scan implementation, testing and
-  implementing concurrent and synchronized shared scans on multiple
-  spindles
+  demonstrating cross-match with external catalogs;
 \item
-  demonstrating cross-match with external catalogs
+  implementing support for Level 3 data;
 \item
-  improving interfaces for users (eg hiding internal tables)
+  next-to-data processing framework;
 \item
-  re-examining and improving query coverage, including more advanced SQL
-  syntax, such as sub-queries as needed
+  improvements to administration scripts;
 \item
-  improvements to administration scripts
+  authentication and authorization;
 \item
-  support for HTM partitioning in Qserv
+  resource management;
 \item
-  authentication and authorization
-\item
-  resource management
-\item
-  early partition results
-\item
-  performance improvements
-\item
-  partition granularity varying per table
-\item
-  security
+  security.
 \end{itemize}
 
-\textbf{Extending metadata to support run-time statistics, implementing
-query management tools}. Qserv currently does not maintain any explicit
-run-time system state. Keeping such state would simplify managing Qserv
-cluster, and building features such as query management: currently there
-are no tools for inspecting and managing queries in-flight, and there
-are no interfaces for halting queries except upon error detection. It is
-clear that users and administrators will need to list running queries,
-check query status and possibly abort queries.
+\textbf{Automatic data distribution and replication}. An important element of
+Qserv's fault tolerance and recovery strategy involves maintaining distributed
+replicas of data within the cluster so data remains online in the face of a
+reasonable number of concurrent disk or node failures.  We have experimented
+successfully with static replication of data at ingest time, but for
+production a system which will automatically place data and respond
+dynamically to node arrivals and departures (both planned and unplanned) will
+be required.  Such a system is currently under development.
 
-\textbf{Implementing support for Level 3 data}. Qserv will need to
-support level 3. That means users should be able to maintain their own
-tables to store their own data or results from previous queries. They
-should be able to create, drop, and update their own tables within the
-system.
+\textbf{Improved query management and monitoring tools}. When performing
+interactive exploration of an observational data set, users frequently issue
+large-scale queries that produce undesired results, even after testing
+such queries on small subsets of the data. We can ameliorate this
+behavior by providing the investigator with early partial results from
+the query, allowing the user to recognize that the returned values are
+incorrect and permitting the query to be aborted without wasting
+additional resources.  A facility to enable clients to temporarily disconnect
+from long-running queries and later rendezvous to check query progress and/or
+collect results is also required.
 
-\textbf{Completing initial shared scan implementation, testing and
-implementing concurrent and synchronized shared scans on multiple
-spindles.} The first prototype implementation of shared scanning is
-mostly complete, with the remaining work focused on basic analysis and
-characterization of incoming user queries to determine scanning tables
-and plumbing to convey the appropriate hints to worker nodes.
+\textbf{Demonstrating cross-match with external catalogs}. One of the use
+cases involves cross matching with external catalogs. In cases where the
+catalog to cross-match with is small, it will be replicated. For
+cross-matching with larger catalogs, the catalog to be cross-matched with
+will need to be partitioned and distributed to the worker nodes.
 
-\textbf{Demonstrating cross-match with external catalogs}. One of the
-use cases involves cross matching with external catalogs. In case the
-catalogs to cross-match with is small, it will be treated as a small
-table and replicated as metadata tables will be. For cross-matching with
-larger catalogs, the catalog to cross-match with will need to be
-partitioned and distributed on the worker nodes.
+\textbf{Implementing support for Level 3 data}. Users should be able to
+maintain their own tables to store their own data or results from previous
+queries. They should be able to create, drop, and replace their own tables
+within the system.
 
-\textbf{Improving interfaces for users}. Many admin-type commands such
-as ``list processes'' or ``explain'' are not ported to the distributed
-Qserv architecture, and thus will not show correct result. At the moment
-we have disabled these commands. Additionally, commands such as listing
-tables in a given database will have to be overloaded, for example, we
-should show user a table ``Object'' (even though in practice such table
-does not exist in the Qserv system), instead of all the chunk
-\texttt{Object\_XXX} tables, that are internal, and should not be
-exposed to the end-user.
-
-\textbf{Re-examining and improving query coverage, including more
-advanced SQL syntax, such as sub-queries as needed}. We examined what
-queries users and production processes execute, however we realize this
-query set is far from the complete list of queries we will see in the
-future. All needed syntax needs to be understood and fully supported.
-Design and feasibility evaluation for sub-query support. Qserv does not
-support SQL sub-queries. Since there is evidence that such a capability
-might be useful to users, so we should formulate a few possible designs
-and understand how easy/difficult they would be to implement. Note that
-there are some alternative viable alternatives, such as splitting
-sub-queries into multiple queries, and/or using session variables. A
-naïve implementation that involves dumping all sub-query results to disk
-and then reading these results from disk, similarly to how multiple
-map/reduce stages are implemented, should be tractable to implement.
+\textbf{Next to data processing framework}. A facility to stream query
+results to dedicated nodes where user-submitted code can run against
+those streams has yet to be implemented.
 
 \textbf{Improvements to administration scripts}. To further automate
 common tasks related to database management, table management, partition
 management, data distribution, and others we need to implement many
-improvements to the administration scripts.
+improvements to our administration scripts.
 
-\textbf{Support for HTM partitioning in Qserv}. HTM is an alternative to
-the rectangular box form of spatial partitioning currently implemented
-in Qserv. Since HTM allows for more advanced indexing and optimization,
-it may eventually replace the current partitioning algorithm.
-
-\textbf{Authentication and authorization}. The current Qserv does not
-implement any form of security or privileges. All access is full access.
-A production database system should provide some facility of user or
-role-based access so that usage can be controlled and resources can be
-shared. This is in particular needed for Level-3 data products.
+\textbf{Authentication and authorization}. A production database system should
+provide some facility for user or role-based access so that usage can be
+controlled and resources can be shared. This is in particular needed for
+Level-3 data products.
 
 \textbf{Resource management}. A production system should have some way
 to manage/restrict resource usage and provide quality-of-service
 controls. This includes a monitoring facility that can track each node's
 load and per-user-query resource usage.
 
-\textbf{Early partition results}. When performing interactive
-exploration of an observational data set, users frequently issue
-large-scale queries that produce undesired results, even after testing
-such queries on small subsets of the data. We can ameliorate this
-behavior by providing the investigator with early partial results from
-the query, allowing the user to recognize that the returned values are
-incorrect and permitting the query to be aborted without wasting
-additional resources. There are two mechanisms we will implement in
-Qserv for providing early results. First, for queries that retrieve a
-filtered set of rows, matching rows can be returned as their query
-fragments complete, well before all fragments finish. Second, for
-queries that group, sort, or aggregate information and therefore perform
-a global operation after any per-partition processing, the global
-operation can be applied to increasingly large subsets of the
-per-partition results, returning an early partial result each time.
-
-\textbf{Performance improvements}. Significant performance gain can be
-obtained by improving scheduler. These improvements pose interesting
-state of the art computing challenges; more details are available in
-Appendix D. In addition, some parts of Qserv are inefficient since they
-were implemented under constraints of development time rather than
-efficiency, or maintainability -- rewriting them would result in further
-performance gains. Caching results for future queries is another example
-of performance optimization that can yield significant speed
-improvements.
-
-\textbf{Partitioning granularity varying per table}. Since large tables
-in LSST vary significantly in row count and row size, it may be
-worthwhile to support partitioning with multiple granularities. For
-execution management it is useful to have partitions sized so that query
-fragments have similar execution cost. To achieve this, partitions may
-need different spatial sizes.
-
 \textbf{Security}. The system needs to be secure and resilient against
 denial of service attacks.
 
 \subsection{Open Issues}\label{open-issues}
 
-What follows is a (non-exhaustive) list of issues, technical and
-scientific, that are still being discussed and where changes are
-possible.
+What follows is a (non-exhaustive) list of issues, technical and scientific,
+that are still being discussed and where changes are possible.
 
 \begin{itemize}
 \item
-  \textbf{Support for updates}. Size of Level 1 catalog is relatively
-  small, and the expected query access patterns are relatively
-  non-challenging, thus currently do not envision any need to deploy
-  scalable Qserv-like architecture for Alert Production. Should this
-  change, we will need to support updates in Qserv, which will likely
-  have some non-trivial impact on the architecture.
+  \textbf{Row updates}. Currently, all rows once ingested into a Qserv
+  instance are treated as immutable, and row updates are not supported. This
+  simplification of design is possible because the motivating use case for
+  Qserv (annually released, authoritative, LSST catalogs) is primarily
+  read-only.  The apparent need for update of Level 3 products within a Qserv
+  instance can be worked around by treating Level 3 products as immutable once
+  ingested; should changes to a Level 3 product be required, that product
+  would be dropped and re-ingested/regenerated rather than updated in place.
+  If it were to become necessary to support row updates and/or transactions
+  directly within Qserv, some considerable changes to the Qserv architecture
+  would likely be required.
 \item
-  \textbf{Very large objects}. Some objects (eg, large galaxies) are
-  much larger than our overlap region, in some cases their footprint
+  \textbf{Very large objects}. Some objects (e.g. large galaxies) are
+  much larger than our overlap region; in some cases their footprint
   will span multiple chunks. Currently we are working with the object
   center, neglecting the actual footprint. While there are some science
   use cases that would benefit from a system that tracks objects based
-  on their footprint, this is currently not a requirement. Potential
+  on their footprint, this is currently not a requirement. A potential
   solution would involve adding a custom index similar to the
-  r-tree-based indexes such as the TOUCH \citep{Nobari:2013:TIS:2463676.2463700}.
+  r-tree-based indexes such as the TOUCH
+  \citep{Nobari:2013:TIS:2463676.2463700}.
 \item
-  \textbf{Very large results}. Currently, the front-end that disptached
-  the query is responsible for assembling the results. In general, this
-  is not a scalable approach as the resources required to processes the
+  \textbf{Very large results}. Currently, the front-end that dispatches
+  a query is also responsible for assembling its eventual results. In general,
+  this is not a scalable approach as the resources required to processes the
   results may be several orders of magnitude greater than those needed
-  to dispatch the query. One solution is to replicate the front-end to
-  the extent necessary to handle query results. Alternatively, the
-  Scalable Service Interface can be augmented to allow running
+  to dispatch the query.  One potential solution is to replicate the
+  front-end to the extent necessary to handle query results. Alternatively,
+  the XRootD SSI interface could be augmented to itself allow running
   disconnected queries. That is, once a particular front-end dispatches
   a query it can get a handle to that query and disconnect from it.
-  Another server can, using that handle, reconnect to the query and
-  process the results. This is a more flexible model as it allows
-  independent scaling of query dispatch and result processing. It also
-  has the aded benefit of not cancelling in-progress queries dispatched
-  by a particulr fron-end should that front-end die.
+  A different server could, using that handle, reconnect to the query and
+  process the results. This would be a more flexible model as it would allows
+  independent scaling of query dispatch and result processing. It would also
+  have the benefit of not requiring cancellation of in-progress queries
+  dispatched from a particular front-end should that front-end die.
+\item
+  \textbf{Sub-queries}. Qserv does not currently support SQL sub-queries.
+  Since there is evidence that such a capability might be useful to users, we
+  should formulate a few possible designs and understand how easy/difficult
+  they might be to implement.  Some potential approaches here might be to
+  split sub-queries into multiple queries and/or use session variables. A
+  naïve implementation that involves dumping all sub-query results to disk
+  and then rereading them, similar to a multi-stage map/reduce, should also
+  be tractable.
 \end{itemize}
 
 \section{References}\label{references}
