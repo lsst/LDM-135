@@ -158,11 +158,9 @@ scale tests that were run and some Qserv demonstrations.
 
 \section{Requirements}\label{requirements}
 
-The key requirements driving the LSST database architecture include:
-incremental scaling, near-real-time response time for ad-hoc simple user
-queries, fast turnaround for full-sky scans/correlations, reliability,
-and low cost, all at multi-petabyte scale. These requirements are
-primarily driven by the ad-hoc user query access.
+Formal DM database requirements are called out in \citeds{LDM-555}.
+For purposes of exposition, this section summarizes some of the
+key requirements which drive the LSST database architecture.
 
 \subsection{General Requirements}\label{general-requirements}
 
@@ -227,11 +225,7 @@ data releases are allowed to be very different.
 The Science Data Archive Data Release query load is defined primarily in
 terms of access to the large catalogs in the archive: Object, Source,
 and ForcedSource. Queries to image metadata, for example, though
-numerous, are expected to be fast and can easily be handled by
-replicating the relatively small metadata tables.
-
-Specific query requirements are called out in \citeds{LDM-555}; in general
-the following are required:
+numerous, are expected to be fast.  In general the following are required:
 
 \textbf{Reproducibility}. Queries executed on any Level 1 and Level 2
 data products must be reproducible.
@@ -250,7 +244,7 @@ queries are expected to be running at any given time.
 
 \textbf{Cross-matching with external/user data}. Occasionally, LSST
 database catalog will need to be cross-matched with external catalogs:
-both large, such as SDSS, SKA or GAIA, and small, such as small amateur
+both large, such as SDSS, SKA, or Gaia, and small, such as small amateur
 data sets. Users should be able to save results of their queries, and
 access them during subsequent queries.
 
@@ -267,7 +261,7 @@ basic SQL92 will be required.
 
 \subsection{Discussion}\label{discussion}
 
-\subsubsection{Implications}\label{implications}
+\subsubsection{Design Considerations}\label{design-consideration}
 
 The above requirements have important implications on the LSST data
 access architecture.
@@ -355,9 +349,10 @@ In summary:
 
 \begin{itemize}
 \item
-  The LSST baseline architecture for Alert Production is an off-the-shelf
-  RDBMS system which uses replication for fault tolerance and which takes
-  advantage of horizontal (time-based) partitioning;
+  The LSST baseline architecture for Alert Production is a (yet to be
+  selected) off-the-shelf RDBMS system which uses replication for fault
+  tolerance and which takes advantage of horizontal (time-based)
+  partitioning;
 \item
   The baseline architecture for user access to Data Releases is an MPP
   (multi-processor, parallel) relational database running on a
@@ -1203,7 +1198,7 @@ progress on long-running analysis on those large tables.
 \subsubsection{Database data
 distribution}\label{database-data-distribution}
 
-The baseline database system will provide access for two database
+The baseline database system will provide access for at least two database
 releases: latest and previous . Data for each release will be spread out
 among all nodes in the cluster.
 
@@ -1579,8 +1574,8 @@ each of these represents all (or a large fraction of) the work for a
 single user query, and the impact is amortized among all disks on all
 workers.
 
-For discussion about the performance of the existing prototype, refer
-\citeds{DMTR-16}.
+For discussion about the performance of the current implementation, refer
+to \citeds{DMTR-16}.
 
 \subsubsection{Memory management}\label{shared-scan-memory-management}
 
@@ -1993,7 +1988,9 @@ extend query coverage, implementation work ahead includes:
 \item
   resource management;
 \item
-  security.
+  security;
+\item
+  early engagement with astronomy users.
 \end{itemize}
 
 \textbf{Automatic data distribution and replication}. We have experimented
@@ -2041,6 +2038,14 @@ load and per-user-query resource usage.
 
 \textbf{Security}. The system needs to be secure and resilient against
 denial of service attacks.
+
+\textbf{Early engagement with astronomy users}.  It is important that we
+engage early enough members of our target user-community, so we can have
+time to on their feedback about what we are building.  Does the system
+have the capabilities they need and expect?  Is the query syntax usable and
+practical for them?  We have begun some work in this area through activities
+in the PDAC (Prototype Data Access Center) cluster at NCSA with a very
+limited audience, and plan to expand that audience in upcoming months.
 
 \subsection{Open Issues}\label{open-issues}
 
@@ -2195,7 +2200,7 @@ risk registry:
   DM-075: New SRD requirements require new DM functionality
 \end{itemize}
 
-\subsection{Risks Mitigations}\label{risks-mitigations}
+\subsection{Risk Mitigations}\label{risk-mitigations}
 
 To mitigate the insufficient performance/scalability risk, we developed Qserv,
 and demonstrated scalability and performance. In addition, to increase chances
