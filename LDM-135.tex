@@ -150,19 +150,20 @@ conference series we lead, and beyond.
 
 \section{Introduction}\label{introduction}
 
-This document discusses the LSST database system architecture. \secref{baseline-architecture} discusses the baseline
-architecture. \secref{requirements} explains the LSST database-related
-requirements.
-\secref{risk-analysis} covers risk analysis.
-\secref{implementation} discusses the
-prototype design (Qserv), including design, current status of the
-software and future plans.
-For some additional background, \citeds{DMTN-046} covers in-depth analysis
-of off-the-shelf potential solutions (Map/Reduce and RDBMS) as of 2013,
-and \citeds{DMTR-21} and \citeds{DMTR-12} describe large scale Qserv tests from 2013.
-The full Qserv test specification is described in \citeds{LDM-552}.
-\citeds{DMTN-048} discusses the original design trade-offs
-and decision process, including small scale tests that were run and some Qserv demonstrations.
+This document discusses the LSST database system architecture, and the state
+of a current implementation.  \secref{requirements} explains the LSST
+database-related requirements that motivate the architecture.
+\secref{baseline-architecture} discusses the baseline architecture itself.
+\secref{implementation} discusses an implementation of the baseline
+architecture for user query access (Qserv), including design, current status,
+and future plans. \secref{risk-analysis} covers attendant risk analysis. For
+some additional background, \citeds{DMTN-046} covers in-depth analysis of off-
+the-shelf potential solutions (Map/Reduce and RDBMS) as of 2013, and
+\citeds{DMTR-21} and \citeds{DMTR-12} describe large scale Qserv tests from
+2013. The full Qserv test specification is described in \citeds{LDM-552}.
+\citeds{DMTN-048} discusses the original design trade-offs and decision
+process, including small scale tests that were run and some Qserv
+demonstrations.
 
 \section{Requirements}\label{requirements}
 
