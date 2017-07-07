@@ -922,18 +922,16 @@ presently underway.  The system as currently implemented is described here.
 
 \subsubsection{MySQL}\label{mysql}
 
-MySQL is used as an underlying SQL execution engine. To control the
-scope of effort, Qserv uses an existing SQL engine, MySQL, to perform as
-much query processing as possible. MySQL is a good choice because of its
-active development community, mature implementation, wide client
-software support, simple installation, lightweight execution, and low
-data overhead. MySQL's large development and user community means that
-expertise is relatively common, which could be important during Qserv's
-development or long-term maintenance in the years ahead. MySQL's MyISAM
-storage engine is also lightweight and well-understood, giving
-predictable I/O access patterns without an advanced storage layout that
-may demand more capacity, bandwidth, and IOPS from a tightly constrained
-hardware budget.
+To control the scope of effort, Qserv uses an existing SQL engine, MySQL, to
+perform as much query processing as possible. MySQL is a good choice because
+of its active development community, mature implementation, wide client
+software support, simple installation, lightweight execution, and low data
+overhead. MySQL's large development and user community means that expertise is
+relatively common, which could be important during Qserv's development or
+long-term maintenance in the years ahead. MySQL's MyISAM storage engine is
+also lightweight and well-understood, giving predictable I/O access patterns
+without an advanced storage layout that may demand more capacity, bandwidth,
+and IOPS from a tightly constrained hardware budget.
 
 It is worth noting, however, that Qserv's design and implementation do
 not depend on specifics of MySQL beyond glue code facilitating results
@@ -943,28 +941,23 @@ future.
 
 \subsubsection{XRootD}\label{xrootd}
 
-The XRootD distributed file system is used to
-provide a distributed, data-addressed, replicated, fault-tolerant
-communication facility to Qserv. Re-implementing these features would
-have been non-trivial, so we wanted to leverage an existing system.
-XRootD has provided scalability,
-fault-tolerance, performance, and efficiency for over 10 years of in the
-high-energy physics community, and its relatively flexible API enabled
-its use as a more general communication medium instead of a file system.
-Since it was designed to serve large data sets, we were confident that
-it could mediate not only query dispatch communication, but also bulk
-transfer of results.
+The XRootD distributed file system is used to provide a distributed, data-
+addressed, replicated, fault-tolerant communication facility for Qserv. Re-
+implementing these features would have been non-trivial, so we wanted to
+leverage an existing system. XRootD has provided scalability, fault-tolerance,
+performance, and efficiency for over 10 years to the high-energy physics
+community. Its relatively flexible API enabled its use in our application as
+more of a general communication routing system.  Since it was designed to
+serve large data sets, we were confident that it could mediate not only query
+dispatch communication, but also bulk transfer of results.
 
-A XRootD cluster is implemented as a set of
-data servers and a redirector(s). A client connects to the redirector,
-which acts as a caching namespace lookup service that redirects clients
-to appropriate data servers. In Qserv, XRootD
-data servers become Qserv workers by plugging custom code into
-XRootD as a custom file system implementation.
-The Qserv master dispatches work as an XRootD
-client to workers by writing to partition-addressed
-XRootD paths and reads results from
-hash-addressed XRootD paths.
+A XRootD cluster is implemented as a set of data servers and redirectors. A
+client connects to a redirector, which acts as a caching namespace lookup
+service that redirects clients to appropriate data servers. In Qserv, XRootD
+data servers become Qserv workers by implementing plug-ins within the XRootD
+framework which advertise partitioned data chunks as addressable resources
+within the XRootD cluster.  The Qserv master then dispatches work and receives
+results as an XRootD client by dispatching messages to these resources.
 
 \begin{figure}[H]
 \centering
@@ -972,62 +965,50 @@ hash-addressed XRootD paths.
 \caption{XRootD.}
 \end{figure}
 
-While the primary purpose of XRootD is to
-provide a distributed clustered file system, it is implemented as a
-plug-in component based system that allows ``file'' to be replaced by
-any other resource object. Qserv makes use of this capability to cluster
-MySQL databases instead of files. Hence, we dispense with calling
-XRootD a distributed file system and simply
-call is a generic system for providing named communication paths,
-clustering, request scheduling, and error recovery.
-
 \subsection{Partitioning}\label{partitioning-1}
 
-In Qserv, large spatial tables are fragmented into spatial pieces in the
-two-level partitioning scheme. The partitioning space is a spherical
-space defined by two angles $\phi$ (right ascension/$\alpha$) and $\theta$ (declination/$\delta$).
-For example, the Object table is fragmented spatially, using a
-coordinate pair specified in two columns--right-ascension and
-declination. On worker nodes, these fragments are represented as tables
-named \emph{Object\_CC} and \emph{Object\_CC\_SS} where \emph{CC} is the
-``chunk id'' (first-level fragment) and \emph{SS} is the ``sub-chunk
-id'' (second-level fragment of the first larger fragment. Sub-chunk
-tables are built on-the-fly to optimize performance of spatial join
-queries. Large tables are partitioned on the same spatial boundaries
-where possible to enable joining between them.
+In Qserv, large spatial tables are fragmented into spatial pieces in a two-
+level partitioning scheme. The partitioning space is a spherical space defined
+by two angles $\phi$ (right ascension/$\alpha$) and $\theta$
+(declination/$\delta$). For example, the Object table is fragmented spatially,
+using a coordinate pair specified in two columns: right-ascension and
+declination. On worker nodes, these fragments are represented as tables named
+\emph{Object\_CC} and \emph{Object\_CC\_SS} where \emph{CC} is the ``chunk
+id'' (first-level fragment) and \emph{SS} is the ``sub-chunk id'' (second-
+level fragment of the first larger fragment. Sub-chunk tables are built on-
+the-fly to optimize performance of spatial join queries. Large tables are
+partitioned on the same spatial boundaries where possible to enable joining
+between them.
 
 \subsection{Query Generation}\label{query-generation}
 
-Qserv is unusual (though not unique) in processing a user query into one
-or more queries that are subsequently executed on off-the-shelf
-single-node RDBMS software. This is done in the hopes of providing a
-distributed parallel query service while avoiding a full
-re-implementation of common database features. However, we have found
-that it is necessary to implement a query processing framework much like
-one found in a more standard database, with the exception that the
-resulting query plans contain SQL statements as the intermediate
-language.
+Qserv is unusual (though not unique) in processing a user query into one or
+more queriy fragments that are subsequently distributed to and executed by
+off-the-shelf single-node RDBMS software. This is done in the hopes of
+providing a distributed parallel query service while avoiding a full re-
+implementation of common database features. However, we have found that it is
+necessary to implement a query processing framework much like one found in a
+more standard database, with the exception that the resulting query plans
+contain SQL statements as the intermediate language.
 
-A significant amount of query analysis not unlike a database query
-optimizer is required in order to generate a distributed execution plan
-that accurately and efficiently executes user queries. Incoming user
-queries are first parsed into an intermediate representation using a
-modified SQL92-compliant grammar (Lubos Vnuk's SqlSQL2). The resulting
-query representation is equivalent to the original user query, and does
-not include any stateful interpretation, but may not completely reflect
-the original syntax. The purpose of this representation is to provide a
-semantic representation that may be operated upon by query analysis and
-transformation modules without the complexity of a parse tree containing
-every node in the original EBNF grammar.
+A significant amount of query analysis not unlike a database query optimizer
+is required in order to generate a distributed execution plan that accurately
+and efficiently executes user queries. Incoming user queries are first parsed
+into an intermediate representation using a modified SQL92-compliant grammar
+(Lubos Vnuk's anltr-based SqlSQL2). The resulting query representation is
+equivalent to the original user query, and does not include any stateful
+interpretation, but may not completely reflect the original syntax. The
+purpose of this representation is to provide a semantic representation that
+may be operated upon by query analysis and transformation modules without the
+complexity of a parse tree containing every node in the original EBNF grammar.
 
-Once the representation has been created, the query representation is
-processed by two sequences of modules. The first sequence operates on
-the query as a single statement. A transformation step occurs to split
-the single representation into a ``plan'' involving multiple phases of
-execution, one to be executed per-data-chunk, and a one to be executed
-to combine the distributed results into final user results. The second
-sequence is applied on this plan to apply the necessary transformations
-for an accurate result.
+Once the intermediate representation has been created, it is processed by two
+sequences of modules. The first sequence operates on the query as a single
+statement. A transformation step occurs to split the single representation
+into a ``plan'' involving multiple phases of execution, one to be executed
+per-data-chunk, and a one to be executed to combine the distributed results
+into final user results. A second sequence is then applied on this plan to
+apply the necessary transformations for an accurate result.
 
 We have found that regular expressions and parse element handlers to be
 insufficient to analyze and manipulate queries for anything beyond the
@@ -1047,16 +1028,16 @@ cluster. These include:
   syntax are rewritten as boolean SQL clauses.
 \item
   Identify secondary index opportunities. Qserv databases designate one
-  column (more are under consideration) as a key column where its values
-  are guaranteed to exist in one spatial location. Identification allows
-  Qserv to convert point queries on this column into spatial
+  column (more are under consideration) as a key column whose values
+  are guaranteed to exist in exactly one spatial location. Identification
+  allows Qserv to convert point queries on this column into spatial
   restrictions.
 \item
   Identify table joins and generate syntax to perform distributed join
   results. Qserv primarily supports ``near-neighbor'' spatial joins for
   limited distances defined in the partitioning coordinate space.
   Arbitrary joins between distributed tables are only supported using
-  the key column. Classify queries according to data coverage and table
+  the key column. Queries are classified according to data coverage and table
   scanning. By identifying tables scanned in a query, Qserv is able to
   mark queries for execution using shared scanning, which greatly
   increases efficiency.
@@ -1097,89 +1078,76 @@ and future LSST needs.
 
 \subsection{Dispatch}\label{dispatch}
 
-The baseline Qserv uses XRootD as a
-distributed, highly-available communications system to allow Qserv
-frontends to communicate with data workers. Up until 2015, Qserv used a
-synchronous client API with named files as communication channels. The
-current baseline system utilizes a general two-way named-channeling
-system which eliminates explicit file abstractions in favor of
-generalized protocol messages that can be flexibly streamed. The scheme
-is called Scalable Service Interface (SSI) and is built on top
-of XRootD. The interface was specifically
-designed to hide underlying XRootD
-dependencies. This allows switching the underlying implementation with
-minimal impact to Qserv.
+Qserv uses XRootD as a distributed, highly-available communications system to
+allow Qserv frontends to communicate with data workers. Up until 2015, Qserv
+used a synchronous client API with named files as communication channels. The
+current baseline system utilizes a general two-way named-channeling system
+which eliminates explicit file abstractions in favor of generalized protocol
+messages that can be flexibly streamed. The scheme is called Scalable Service
+Interface (SSI) and is built on top of XRootD.
 
 \subsubsection{Wire protocol}\label{wire-protocol}
 
-Qserv encodes query dispatches in ProtoBuf messages, which contain SQL
-statements to be executed by the worker and annotations that describe
-query dependencies and characteristics. Transmitting query
-characteristics allows Qserv workers to optimize query execution under
-changing CPU and disk loads as well as memory considerations. The worker
-need not re-analyze the query to discover these characteristics or guess
-at conditions that cannot be determined by query inspection.
+Qserv encodes query dispatches in Google Protobuf messages, which contain SQL
+statements to be executed by the worker and annotations that describe query
+dependencies and characteristics. Transmitting query characteristics allows
+Qserv workers to optimize query execution under changing CPU and disk loads as
+well as memory considerations. The worker need not re-analyze the query to
+discover these characteristics or guess at conditions that cannot be
+determined by query inspection.
 
-Query results are also returned by ProtoBuf messages. Current versions
-transmit a MySQL dump file allowing the query results to be faithfully
-reproduced on the Qserv frontend, but the baseline system will transmit
-results directly. Initial implementations avoided logic to encode and
-decode data values, but experience with the prototype MonetDB worker
-backend proved that data encoding and marshalling were a contained
-problems whose solution could significantly improve overall query
-latency by avoiding mutating metadata operations on worker and frontend
-DBMS systems. Thus the baseline system will encode results in protobuf
-messages containing schema and row-by-row encoded data values. Streaming
-results directly from worker DBMS instances into frontend DBMS instances
-is a technique under consideration, as is a custom aggregation engine
-for results that would likely ease the implementation of providing
+Query results are also returned via Protobuf messages. Initial implementations
+transmitted table dumps to avoid logic to encode and decode data values, but
+experience with the prototype MonetDB worker backend proved that data encoding
+and marshalling were constrained problems whose solution could significantly
+improve overall query latency by avoiding mutating metadata operations on
+worker and frontend DBMS systems.  The system presently encodes results in
+protobuf messages containing schema and row-by-row encoded data values.
+Streaming results directly from worker DBMS instances into frontend DBMS
+instances is a technique under consideration, as is a custom aggregation
+engine for results that would likely ease the implementation of providing
 partial query results to end users.
 
 \subsubsection{Frontend}\label{frontend}
 
-ABH In 2012, a new XRootD client API was
-developed to address our concerns over the older version's scalability
-(uncovered during a 150 node, 30TB scalability test \citedsp{DMTR-21}). The new client API
-began production use for the broader XRootD
-community in late 2012. Subsequently, work began under our guidance
-towards an XRootD Qserv client API that was
-based on request-response interaction over named channels, instead of
-opening, reading, and writing files. A production version of this API,
-the Scalable Service Interface (SSI) became available in early
-2015 and Qserv has since been ported to use this interface. The port
-eliminated a significant body of code that maps dispatching and
-result-retrieving to file operations. The SSI API will reside
+In 2012, a new XRootD client API was developed to address our concerns over
+the older version's scalability (uncovered during a 150 node, 30TB scalability
+test \citedsp{DMTR-21}). The new client API began production use for the
+broader XRootD community in late 2012. Subsequently, work began under our
+guidance towards an XRootD Qserv client API that was based on request-response
+interaction over named channels, instead of opening, reading, and writing
+files. A production version of this API, the Scalable Service Interface (SSI)
+became available in early 2015 and Qserv has since been ported to use this
+interface. The port eliminated a significant body of code that mapped
+dispatching and result-retrieval to file operations. The SSI API now resides
 in the XRootD code base, where it may be exercised by other projects.
 
-The SSI API provides Qserv with a fully asynchronous interface
-that eliminates nearly all blocking threads used by the Qserv frontend
-to communicate with its workers. This eliminated one class of problems
-we have encountered during large-scale testing. The SSI API has
-defined interfaces that integrate smoothly with the Protobufs-encoded
-messages used by Qserv. Two novel features were specifically added to
-improve Qserv performance. The streaming response interface enables
-reduced buffering in transmitting query results from a worker mysqld to
-a the frontend, which lowers end-to-end query latency and reduces
-storage requirements on workers. The out-of-band meta-data response
-which arrives prior to the data results can be used to map out the
-Protobufs encoding and significantly simplify handling response memory
-buffers.
+The SSI API provides Qserv with a fully asynchronous interface that eliminates
+nearly all blocking threads used by the Qserv frontend to communicate with its
+workers. This eliminated one class of problems we encountered during large-
+scale testing. The SSI API has defined interfaces that integrate smoothly with
+the Protobufs-encoded messages used by Qserv. Two novel features were
+specifically added to improve Qserv performance. The streaming response
+interface enables reduced buffering in transmitting query results from a
+worker mysqld to a the frontend, which lowers end-to-end query latency and
+reduces storage requirements on workers. The out-of-band meta-data response
+which arrives prior to the data results can be used to map out the Protobufs
+encoding and significantly simplify handling response memory buffers.
 
 The fully asynchronous API is crucial on the master because of the large
-number of concurrent chunk queries in flight expected in normal
-operation. For example, with the sky split into 10k pieces, having 10
-full-scanning queries running concurrently would have 100k concurrent
-chunk queries--too large a number of threads to allow on a single
-machine. Hence, an asynchronous API to XRootD
-is crucial. Threads are used to parallelize multiple CPU-bound tasks.
-While it does not seem to be important to parse/analyze/manipulate a
-single user query in parallel (and such a task would be a research
-topic), the retrieval and processing of results could be done in
-parallel if some portion of the aggregation/merging were done in Qserv
-code rather than loaded into the frontend's MySQL instance and merged
-via SQL queries. Thus results processing should be parallelized among
-results from individual chunks, and query parsing/analysis/manipulation
-can be parallelized among independent user queries.
+number of concurrent chunk queries in flight expected in normal operation. For
+example, with the sky split into 10k pieces, having 10 full-scanning queries
+running concurrently would have 100k concurrent chunk queries -- too large a
+number of threads to allow on a single machine. Hence, an asynchronous API to
+XRootD is crucial. Threads are used to parallelize multiple CPU-bound tasks.
+While it does not seem to be important to parse/analyze/manipulate a single
+user query in parallel (and such a task would be a research topic), the
+retrieval and processing of results could be done in parallel if some portion
+of the aggregation/merging were done in Qserv code rather than loaded into the
+frontend's MySQL instance and merged via SQL queries. Thus results processing
+should be parallelized among results from individual chunks, and query
+parsing/analysis/manipulation can be parallelized among independent user
+queries.
 
 \subsubsection{Worker}\label{worker}
 
@@ -1203,28 +1171,24 @@ same table chunk, the worker allows as many of them to run as there are
 CPU cores in the system, but if it has many queries that involve
 different chunk tables, it allows fewer simultaneous chunk queries in
 order to ensure that only one table scan per disk spindle occurs.
-Further discussion of this ``shared scanning'' feature is described in
-\citeds{DMTN-048}.
+Further discussion of this ``shared scanning'' feature is described below.
 
 \subsection{Threading Model}\label{threading-model}
 
 Nearly every portion of Qserv is written using a combination of threaded
 and asynchronous execution.
 
-Qserv heavily relies on multi-threading to take advantage of all
-available CPU cores when executing queries, as an example, to complete
-one full table scan on a table consisting of 1,000 chunks, 1,000 queries
-(processes) will be executed. To efficiently handle large number of
-processes that are executed on each worker, we ended up rewriting the
-XRootD client and switching from
-thread-per-request model to a thread-pool model. The new client is
+Qserv heavily relies on multi-threading to take advantage of all available CPU
+cores when executing queries, as an example, to complete one full table scan
+on a table consisting of 1,000 chunks, 1,000 queries (processes) will be
+executed. To efficiently handle the large number of processes that are
+executed on each worker, we ended up rewriting the XRootD client and switching
+from a thread-per-request model to a thread-pool model. The new client is
 completely asynchronous, with real call-backs.
 
 \begin{longtable}{|l|p{0.6\textwidth}|}
 \hline
-mysqlproxy & Single-threaded Lua code \\ \hline
-Frontend-python & Single-threaded asynchronous reactor; blocking-thread per user
-query \\ \hline
+mysqlproxy & Single-threaded Lua code driving non-blocking mysql client API \\ \hline
 Frontend-C++ & Processing thread per user-query for preparation; Results-merging
 thread-per-user-query on-demand; \\ \hline
 Frontend-XRootD &
@@ -1246,18 +1210,31 @@ results \\ \hline
 \subsection{Aggregation}\label{aggregation}
 
 Qserv supports several SQL aggregation functions: AVG(), COUNT(), MAX(),
-MIN(), and SUM(), and should support SQL92 level GROUP BY.
+MIN(), and SUM(), and SQL92 level GROUP BY.
 
 \subsection{Indexing}\label{indexing-1}
 
+Qserv eschews heavy indexing in general, due to the prohibitive overhead costs
+it would incur as a result of the scale of the hosted data. Nevertheless,
+queries constrained by Object primary key are anticipated to be a very common
+use case and are important to execute efficiently.  To that end, the current
+implementation admits one special-case global index on master nodes, which can
+be used to map queries restricted by Object primary key to the chunks and
+subchunks which contain those Objects. Query fragments can then be dispatched
+directly to just the set of involved workers, where in-memory subchunk caching
+allows the fragments to be efficiently executed.  This special-case global
+index from Object primary key to chunk/subchunk is referred to as the
+``secondary index''.\footnote{It is acknowledged that the name ``secondary
+index'' was poorly chosen, given its usual meaning in the database literature.  This
+name will probably be changed in the near future.}
+
 The secondary index utilizes one or more tables using the InnoDB storage
-engine on each czar to perform lookups on the database's key column
-(objectId). Performance tests (Figure~\ref{fig:indexing-tests}) on a
-single, dual-core host with 1 TB hard disk storage (not SSD) have shown
-that this configuration will support a full load of 40 billion rows in
-about 400,000 seconds (110 hours). A more realistic configuration with
-multiple cores and SSD storage is expected to meet the requirement of
-fully loading in less than 48 hours.
+engine on each master node to perform lookups. Performance tests
+(Figure~\ref{fig:indexing-tests}) on a single, dual-core host with 1 TB hard
+disk storage (not SSD) have shown that this configuration will support a full
+load of 40 billion rows in about 400,000 seconds (110 hours). A more realistic
+configuration with multiple cores and SSD storage is expected to meet the
+requirement of fully loading in less than 48 hours.
 
 \begin{figure}[H]
 \centering
@@ -1266,21 +1243,20 @@ fully loading in less than 48 hours.
 \end{figure}
 
 To improve the performance of the InnoDB storage engine for queries, the
-secondary index may be split across a small number (dozens) of tables,
-each containing a contiguous range of keys. This splitting, if done,
-will be independent of the partitioning of the database itself. The
-contiguity of key ranges will allow the secondary index service to
-identify the appropriate split table arithmetically via an in-memory
-lookup.
+secondary index may be split across a small number (dozens) of tables, each
+containing a contiguous range of keys. This splitting, if done, will be
+independent of the partitioning of the database itself. The contiguity of key
+ranges will allow the secondary index service to identify the appropriate
+split table arithmetically via an in-memory lookup.
 
 \subsubsection{Secondary Index Structure}\label{secondary-index-structure}
 
-The secondary index consists of three columns: the key (objectId), the
-chunk where all data with that key are located (chunkId), and the
-subchunk within that chunk where data with the key are located
-(subChunkId). The objectId is assigned by the science pipelines as a
-64-bit integer value; the chunkId and subChunkId are both 16-bit
-integers which identify spatial regions on the sky.
+The secondary index consists of three columns: the Object primary key
+(objectId), the chunk where all data with that key are located (chunkId), and
+the subchunk within that chunk where data with the key are located
+(subChunkId). The objectId is assigned by the science pipelines as a 64-bit
+integer value; the chunkId and subChunkId are both 16-bit integers which
+identify spatial regions on the sky.
 
 \subsubsection{Secondary Index Loading}\label{secondary-index-loading}
 
@@ -1293,7 +1269,7 @@ Each of those splits is loaded into a table \emph{en masse}.
 
 To fully optimize the loading and table splitting, the entire index
 should be collected from all workers and presorted in memory on the
-czar. This is not reasonable for 40 billion entries (requiring a minimum
+master. This is not reasonable for 40 billion entries (requiring a minimum
 of 480 GB memory, plus overhead). Instead, the index data from a single
 worker can be assumed to be a ``representative sample'' from the full
 range of objectIds, so table splitting can be done using the first
@@ -1304,12 +1280,11 @@ according to those defined tables.
 
 LSST will maintain the released data store both on tape media and on a
 database cluster. The tape archive is used for long-term archival. Three
-copies of the compressed catalog data will be kept. The database cluster
-will maintain 3 online copies of the data. Because computer clusters of
-reasonable size failure regularly, the cluster must maintain replicas in
-order to provide continuous data access. A replication factor of 3 (r=3)
-is needed in order to determine data integrity by majority rule when one
-replica is corrupt.
+copies of the compressed catalog data will be kept. The database cluster will
+maintain 3 online copies of the data. Because computer clusters of reasonable
+size failure regularly, the cluster must maintain replicas in order to provide
+continuous data access. A replication factor of 3 is needed in order to
+determine data integrity by majority rule when one replica is corrupt.
 
 If periodic unplanned downtime is acceptable, an on-tape replica may
 function as one of the three. However, the use of tape dramatically
@@ -1361,20 +1336,16 @@ time will only have 1 or 2 replicas. Three replicas will ensure that
 tables will be available even in cases of large failures, or when nodes
 need to be migrated to new hardware in bulk.
 
-Should an entire node fail, replicating that data to another single node
-would be fairly expensive in terms of time. As of July 2013, a 3TB drive
-will have a write speed of 60/150/100 MB/s (min/max/avg) \citep{Kirsch:2012}
-and refilling
-this single drive would remove access to that replica of the data for
-about 8 hours. We plan on having free space on each node, and only fill
-local storage to 80\%. The free space will be used for temporary storage
-of tables on failures, where replicas can take place in parallel between
-nodes into this free space. When new nodes with free storage are added
-to the cluster, then this data can be copied off this free space into
-the drive, taking the full 8 hours, but there will still be 3 replicas
-of data during this time. Once this is complete, this data will have 4
-replicas for the short period of time while these tables can be removed
-from the temporary storage, returning each node to 80\% usage.
+Should an entire node fail, replicating that data to another single node would
+be fairly expensive in terms of time (on the order of hours).  We plan on
+having free space on each node, filling local storage to 80\%. The free space
+will be used for temporary storage of tables on failures, where replicas can
+take place in parallel between nodes into this free space. When new nodes with
+free storage are added to the cluster, then this data can be copied off this
+free space into the drive, potentially taking several hours, but there will
+still be 3 replicas of data during this time. Once this is complete, this data
+will have 4 replicas for the short period of time until these tables can be
+removed from the temporary storage, returning each node to 80\% usage.
 
 \subsection{Metadata}\label{metadata}
 
@@ -1385,18 +1356,15 @@ maintain schema and data integrity and optimize the cluster usage.
 \subsubsection{Static metadata}\label{static-metadata}
 
 Qserv typically works with databases and tables distributed across many
-different machines: it breaks individual large tables into smaller
-chunks and distributes them across many nodes. All chunks that belong to
-the same logical table must have the same schema and partitioning
-parameters. Different tables often need to be partitioned differently,
-for example some tables might be partitioned with overlap (such as the
-Object table), some might be partitioned with no overlap (for example
-the Source table), and some might not need partitioning at all (e.g., a
-tiny Filter table). Further, there might be different partitioning
-strategies, such as spherical-box based, or HTM-based. All this
-information about schema and partitioning for all Qserv-managed
-databases and tables needs to be tracked and kept consistent across the
-entire Qserv cluster.
+different machines: it breaks individual large tables into smaller chunks and
+distributes them across many nodes. All chunks that belong to the same logical
+table must have the same schema and partitioning parameters. Different tables
+often need to be partitioned differently; for example some tables might be
+partitioned with overlap (such as the Object table), some might be partitioned
+with no overlap (for example the Source table), and some might not need
+partitioning at all (e.g. a tiny Filter table). All this information about
+schema and partitioning for all Qserv-managed databases and tables needs to be
+tracked and kept consistent across the entire Qserv cluster.
 
 Implementation of the static metadata in Qserv is based on hierarchical
 key-value storage which uses a regular MySQL database as a storage
@@ -1435,9 +1403,9 @@ The main clients of the static metadata are:
   Qserv master(s), mostly querying partitioning parameters but also
   allowed to modify table/database status when deleting/creating new
   tables and databases. Master(s) should not depend on node definitions
-  in metadata, the xrootd facility is used to communicate with workers.
+  in metadata; the XRootD facility is used to communicate with workers.
 \item
-  Special ``watcher'' service which implements distributed process of
+  A special ``watcher'' service which implements distributed processes of
   database and table management.
 \item
   An initial implementation of the data loading application which will
@@ -1454,12 +1422,12 @@ current state, and keep various statistics about query execution. This
 sort of data is updated frequently, several times per query execution,
 and is called dynamic metadata.
 
-Prototype implementation of the dynamic metadata is based on MySQL
+The implementation of the dynamic metadata is based on the MySQL
 database. Like static metadata it needs to be shared between all master
-instances and will be served via a single fault-tolerant MySQL instance
-which will be shared with static metadata database.
+instances and is served via a single fault-tolerant MySQL instance
+which is shared with static metadata database.
 
-Dynamic metadata will contain the following information:
+Dynamic metadata contains the following information:
 
 \begin{itemize}
 \item
@@ -1469,7 +1437,7 @@ Dynamic metadata will contain the following information:
   includes query processing state and some statistical/timing
   information.
 \item
-  Per-query list of table names used by the asynchronous queries, this
+  Per-query list of table names used by the asynchronous queries; this
   information is used to delay table deletion while async queries are in
   progress.
 \item
@@ -1481,13 +1449,13 @@ Dynamic metadata will contain the following information:
 
 The most significant use of the dynamic metadata is to track execution
 of asynchronous queries. When an async query is submitted it is
-registered in dynamic metadata and its ID is returned to the user
+registered in the dynamic metadata and its ID is returned to the user
 immediately. Later users can request status information for that query
 ID which is obtained from dynamic metadata. When query processing is
-finished users can request results from that query, and the master can
+finished, users can request results and the master can
 obtain the location of the result data from dynamic metadata.
 
-Additionally dynamic metadata can be used to collect statistical
+Additionally, dynamic metadata can be used to collect statistical
 information about queries that were executed in the past which may be an
 important tool in understanding and improving system performance.
 
@@ -1497,25 +1465,21 @@ The Qserv metadata system is implemented based on master/server
 architecture: the metadata is centrally managed by a \emph{Qserv
 Metadata Server} (qms). The information kept on each worker is kept to a
 bare minimum: each worker only knows which databases it is supposed to
-handle, all remaining information can be fetched from the qms (through
-Qserv) as needed. This follows our philosophy of keeping the workers as
+handle, and all remaining information can be fetched from the qms
+as needed. This follows our philosophy of keeping the workers as
 simple as possible.
 
 The real-time metadata is managed inside qms in in-memory tables,
 periodically synchronized with disk-based table. Such configuration
-allows reducing qms latency---important to avoid delaying query
+allows reducing qms latency -- important to avoid delaying query
 execution time. Should a qms failure occur, the in-flight queries for
 which the information was lost will be restarted. Since the
 synchronization to disk-based table will occur relatively frequently
-(e.g. at least 1 per minute), the lost time is insignificant. To avoid
-overloading the qms with, only the high-level information available from
+(e.g. at least once per minute), the lost time is insignificant. To avoid
+overloading the qms, only the high-level information available from
 Qserv-master is stored in qms; all worker-based information is cached in
-a scratch space locally to each worker in a simple, raw form (e.g,
+a scratch space local to each worker in a simple, raw form (e.g,
 key-value, ASCII file), and can be fetched on demand as needed.
-
-At the moment we use XML-RPC as a message protocol to communicate with
-qms. It was a natural choice given that this protocol is already in use
-by Qserv master.
 
 \subsubsection{Typical Data Flow}\label{typical-data-flow}
 
@@ -1560,8 +1524,8 @@ Dynamic-metadata:
 Arbitrary full-table scanning queries must be supported in LSST's
 baseline catalog, and in order to provide this support cost-effectively
 and efficiently, Qserv implements shared scans. Shared scans effectively
-reduces the I/O cost of executing multiple scanning queries
-concurrently, reducing the system hardware need and purchasing costs.
+reduce the I/O cost of executing multiple scanning queries
+concurrently, reducing the require system hardware and purchasing costs.
 
 Shared scans reduce overall I/O costs by forcing incoming queries to
 share. When multiple queries scan the same table, theoretically, they
@@ -1572,8 +1536,8 @@ random and uncorrelated. Each query begins scanning at different times,
 and because LSST's catalog tables will be so large, general system
 caching is ineffective. In Qserv, scanning queries are broken up into
 many parts, and shared scanning forces each query to operate on the same
-portion and thus share I/O cost, rather than allowing each to perform
-its own ordered scan and incur costs individually.
+portion of data at the same time by reordering and sequencing the query
+fragments.
 
 \subsubsection{Background}\label{shared-scan-background}
 
@@ -1598,7 +1562,7 @@ depends on non-indexed column values and involves more than \emph{k}
 chunks (where \emph{k} is a tunable constant). Note that involving
 multiple chunks implies that the query selects from at least one
 partitioned table. This classification is performed during query
-analysis on the front-end and leveraging table metadata. The metadata
+analysis on the front-end and leverages table metadata. The metadata
 includes a ``scan rating'', which is set by hand. Higher scan ratings
 indicate larger tables that take longer to read from disk. The
 identified ``scan tables'' and their ratings are marked and passed along
@@ -1632,22 +1596,21 @@ the table with highest scan rating to ensure that the largest tables in
 the chunk are grouped together.
 
 Once the query is on the appropriate scheduler, the algorithm proceeds
-as follows. When a dispatch slot is available, it checks the highest
-priority scheduler. If that scheduler has a query fragment, hereafter
-called tasks, and it is not at its quota limit, it is allowed to start
+as follows: When a dispatch slot is available, it checks the highest
+priority scheduler. If that scheduler has a query fragment (hereafter
+called a task), and it is not at its quota limit, it is allowed to start
 its next task, otherwise the worker checks the next scheduler. It
 continues doing this until a task has been started or all the schedulers
 have been checked.
 
-Each scheduler is only allowed to start a task under certain
-circumstances. There must be enough threads available from the pool so
-that none of the other schedulers are starved for threads as well as
-enough memory available to lock all the tables for the task in memory.
-If the scheduler has no tasks running, it may start one task and have
-memory reserved for the tables in that task. This should prevent any
-scheduler from hanging due to memory starvation without requiring
-complicated logic but could incur extra disk I/O. More on locking tables
-in memory later.
+Each scheduler is only allowed to start a task under certain circumstances.
+There must be enough threads available from the pool so that none of the other
+schedulers are starved for threads as well as enough memory available to lock
+all the tables for the task in memory. If the scheduler has no tasks running,
+it may start one task and have memory reserved for the tables in that task.
+This should prevent any scheduler from hanging due to memory starvation
+without requiring complicated logic, but it could incur extra disk I/O. More
+on locking tables in memory later.
 
 Schedulers check for tasks by first checking the top of the active
 priority queue. If the active priority queue is empty, and the pending
@@ -1655,8 +1618,8 @@ priority queue is not, then the active and pending queues are swapped
 with the task being taken from the top of the ``new'' active queue.
 
 Since the queries are being run by a separate DBMS instance of which
-there is little control of how it goes about running queries, the worker
-can control when queries are sent to the DBMS and also lock files in
+there is little control over how it goes about running queries, the worker
+can only control when queries are sent to the DBMS and also lock files in
 memory. Files in memory are among the most likely items to be paged out
 when memory resources are low, which would increase disk I/O. Locking
 files in memory prevents this from happening. However, care must taken
@@ -1694,7 +1657,7 @@ are admitted to the grouping scheduler. The grouping scheduler is a
 simple scheduler that is a simple variant of a plain FIFO
 (first-in-first-out) scheduler. Like a FIFO scheduler, it maintains a
 queue of queries to execute, and operates identically to a FIFO
-scheduler with one exception--queries are grouped by chunk id. Each
+scheduler with one exception -- queries are grouped by chunk id. Each
 incoming query is inserted into the queue behind another query on the
 same chunk, and at the back if no queued query matches. The grouping
 scheduler assumes that the queue will never get very long, because it is
@@ -1710,55 +1673,48 @@ each of these represents all (or a large fraction of) the work for a
 single user query, and the impact is amortized among all disks on all
 workers.
 
-For discussion about the performance of the existing prototype, refer to
-demo-shared-scans.
+For discussion about the performance of the existing prototype, refer
+\citeds{DMTR-16}.
 
 \subsubsection{Memory management}\label{shared-scan-memory-management}
 
-To minimize system paging when multiple threads are scanning the same
-table, we implemented a memory manager called memman. When a
-shared scan is about to commence, the shared scan scheduler informs
-memman about the tables the query will be using and how
-important it is to keep those tables in memory during the course of the
-query. When directed to keep the tables in memory, memman opens
-each data base table file, maps it into memory, and then locks the pages
-to prevent the kernel from stealing the pages for other uses. Thus, once
-a file page is faulted in, it stays in memory and allows other threads
-to scan the contents of the page without incurring additional page
-faults. Once the shared scan of the table completes, memman is
-told that the tables no longer need to remain in memory. memman
-frees up the pages by unlocking them and deleting the mapping.
+To minimize system paging when multiple threads are scanning the same table,
+we implemented a memory manager called memman. When a shared scan is about to
+commence, the shared scan scheduler informs memman about the tables the query
+will be using and how important it is to keep those tables in memory during
+the course of the query. When directed to keep the tables in memory, memman
+opens each data base table file, maps it into memory, and then locks the pages
+to prevent the kernel from stealing the pages for other uses. Thus, once a
+file page is faulted in, it stays in memory and allows other threads to scan
+the contents of the page without incurring additional page faults. Once the
+shared scan of the table completes, memman is told that the tables no longer
+need to remain in memory. memman frees up the pages by unlocking them and
+deleting the mapping.
 
-This type of management is necessary to satisfy system paging
-requirements because the prime paging pool is the set of unlocked file
-system pages.
+This type of management is necessary to satisfy system paging requirements
+because the prime paging pool is the set of unlocked file system pages.
 
-\subsubsection{\texorpdfstring{XRootD
-scheduling
-support}{XRootD scheduling support}}\label{shared-scan-xrootd-scheduling-support}
+\subsubsection{XRootD scheduling support}\label{shared-scan-xrootd-scheduling-support}
 
-When the front-end dispatches a query, the
-XRootD normally picks the least used server in
-an attempt to spread the load across all of the nodes holding the
-required table. While this works well for interactive queries, it is
-hardly ideal for shared scan queries. In order to optimize memory and
-I/O usage, queries for the same table in a shared scan should all be
-targeted to the same node. A new scheduling mode was added to the
-XRootD cmsd called affinity scheduling. The
-front-end can tell XRootD whether or not a
-particular query has affinity to other queries using the same table.
-Queries that have affinity are always sent to the same node relative to
-the table they will be using. This allows the back-end scheduler to
-minimize paging by running the maximum number of queries against the
-same table in parallel. Should that node fail,
-XRootD assigns another working node that has
-the table as the target node for queries that have affinity.
+When the front-end dispatches a query, XRootD normally picks the least used
+server in an attempt to spread the load across all of the nodes holding the
+required table. While this works well for interactive queries, it is hardly
+ideal for shared scan queries. In order to optimize memory and I/O usage,
+queries for the same table in a shared scan should all be targeted to the same
+node. A new scheduling mode was added to the XRootD cmsd called affinity
+scheduling. The front-end can tell XRootD whether or not a particular query
+has affinity to other queries using the same table. Queries that have affinity
+are always sent to the same node relative to the table they will be using.
+This allows the back-end scheduler to minimize paging by running the maximum
+number of queries against the same table in parallel. Should that node fail,
+XRootD assigns another working node that has the table as the target node for
+queries that have affinity.
 
 \subsubsection{Multiple tables support}\label{shared-scan-multiple-tables-support}
 
 Handling multiple tables in shared scans requires an additional level of
-management. The scheduler will aim to satisfy a throughput yielding
-average scan latencies as follows:
+management. The scheduler will aim to satisfy a throughput yielding average
+scan latencies as follows:
 
 \begin{itemize}
 \item
@@ -1774,24 +1730,22 @@ average scan latencies as follows:
     \texttt{Object\_APMean}} queries (join): 8 hours.
 \end{itemize}
 
-As stated in 8.10.2, there will be schedulers for queries that are
-expected to take one hour, eight hours, or twelve hours. The schedulers
-group the the tasks by chunk id and then the highest scan rating of the
-all tables in the task. The scan ratings are meant to be unique per
-table and indicative of the size of the table, so that this sorting
-places scans using the largest table from the same chunk next to each
-other in the queue. Using scan rating allows flexibility to work with
+There are be schedulers for queries that are expected to take one hour, eight
+hours, or twelve hours. The schedulers group the the tasks by chunk id and
+then the highest scan rating of the all tables in the task. The scan ratings
+are meant to be unique per table and indicative of the size of the table, so
+this sorting places scans using the largest table from the same chunk next to
+each other in the queue. Using scan rating allows flexibility to work with
 data sets with schemas different than that of LSST.
 
 Since scans are not limited to specific tables, complicated joins could
 occur in user queries that could take more than twelve hours to process.
-The worker may also need to be able to identify user queries that are
-too slow for the current scheduler based on the time it takes to
-complete tasks for that query. This indicates there may be a need for a
-scheduler to handle queries with very long run times.
+The worker monitors query progress, and if particular queries appear to be
+too slow for their current scheduler, they are removed and placed on a
+dedicated "snail scan" so the rest of the queries on the original scheduler
+are not overly delayed.
 
-\subsection{Level 3: User Tables, External
-Data}\label{level-3-user-tables-external-data}
+\subsection{Level 3: User Tables, External Data}\label{level-3-user-tables-external-data}
 
 Level 3 tables including tables generated by users, and data catalogs
 brought from outside, depending on their type and size, will be either
@@ -1801,175 +1755,148 @@ distributed Level 3 data will share the nodes with Level 2 data, it will
 be kept on dedicated disks, independent from the disks serving Level 2
 data. This will simplify maintenance and recoverability from failures.
 
-Level 3 tables will be tracked and managed through the Qserv Metadata
-System (qms), described in \secref{metadata}. This
-includes both the static, as well as the dynamic metadata.
+Level 3 tables will be tracked and managed through the Qserv Metadata System
+(qms), described in \secref{metadata}. This includes both the static, as well
+as the dynamic metadata.
 
-\subsection{Cluster and Task
-Management}\label{cluster-and-task-management}
+\subsection{Cluster and Task Management}\label{cluster-and-task-management}
 
-Qserv delegates management of cluster nodes to
-XRootD. The XRootD
-system manages cluster membership, node registration/deregistration,
-address lookup, replication, and communication. Its Scalable Service
-Interface (SSI) API provides data-addressed communication
-channels to the rest of Qserv, hiding details like node count, the
-mapping of data to nodes, the existence of replicas, and node failure.
-The Qserv manager focuses on dispatching queries to endpoints and Qserv
-workers focus on receiving and executing queries on their local data.
+Qserv delegates management of cluster nodes to XRootD. The XRootD system
+manages cluster membership, node registration/deregistration, address lookup,
+replication, and communication. Its Scalable Service Interface (SSI) API
+provides data-addressed communication channels to the rest of Qserv, hiding
+details like node count, the mapping of data to nodes, the existence of
+replicas, and node failure. The Qserv master focuses on dispatching queries to
+endpoints and Qserv workers focus on receiving and executing queries on their
+local data.
 
-Cluster management performed outside of XRootD
-does not directly affect query execution, but include coordinating data
-distribution, loading, nodes joining/leaving and is discussed in
-qserve-admin. The SSI API includes methods that allow dynamic
-updates to the data view of an XRootD cluster.
-So that when new tables appear or disappear, the
-XRootD system will incorporate that
-information for future scheduling decisions. Thus, clusters can
-dynamically change without the need to restart the
-XRootD system.
+Cluster management performed outside of XRootD does not directly affect query
+execution, but includes coordinating data distribution, data loading, and node
+arrival/departure, and is discussed in \secref{administration}. The SSI API
+includes methods that allow dynamic updates to the data view of an XRootD
+cluster so that when new tables appear or disappear, the XRootD system can
+incorporate that information for future scheduling decisions. Thus, clusters
+can dynamically change without the need to restart the XRootD system.
 
 \subsection{Fault Tolerance}\label{fault-tolerance}
 
-Qserv approaches fault tolerance in several ways. The design exploits
-the immutability of the underlying data by replicating and distributing
-data chunks across a cluster such that in the event of a node failure,
-the problem can be isolated and all subsequent queries re-routed to
-nodes maintaining duplicate data. Moreover, this architecture is
-fundamental to Qserv's incremental scalability and parallel performance.
-Within individual nodes, Qserv is highly modularized with minimal
-interdependence among its components, which are connected via narrow
-interfaces. Finally, individual components contain specialized logic for
-minimizing, handling, and recovering from errors.
+Qserv approaches fault tolerance in several ways. The design exploits the
+immutability of the underlying data by replicating and distributing data
+chunks across a cluster such that in the event of a node failure, the problem
+can be isolated and all subsequent queries re-routed to nodes maintaining
+duplicate data. Moreover, this architecture is fundamental to Qserv's
+incremental scalability and parallel performance. Within individual nodes,
+Qserv is highly modularized with minimal interdependence among its components,
+which are connected via narrow interfaces. Finally, individual components
+contain specialized logic for minimizing, handling, and recovering from
+errors.
 
-The components that comprise Qserv include features that independently
-provide failure-prevention and failure-recovery capabilities. The MySQL
-proxy is designed to balance its load among several underlying MySQL
-servers and provide automatic fail-over in the event a server fails. The
-XRootD system provides multiple managers and
-highly redundant servers to provide high bandwidth, contend with high
-request rates, and cope with unreliable hardware. And the Qserv master
-itself contains logic that works in conjunction with
-XRootD to isolate and recover from
-worker-level failures.
+The components that comprise Qserv include features that independently provide
+failure-prevention and failure-recovery capabilities. The MySQL proxy is
+designed to balance its load among several underlying MySQL servers and
+provide automatic fail-over in the event a server fails. The XRootD system
+provides multiple managers and highly redundant servers to provide high
+bandwidth, contend with high request rates, and cope with unreliable hardware.
+And the Qserv master itself contains logic that works in conjunction with
+XRootD to isolate and recover from worker-level failures.
 
-A worker-level failure denotes any failure mode that can be confined to
-one or more worker nodes. In principle, all such failures are
-recoverable given the problem nodes are identified and alternative nodes
-containing duplicate data are available. Examples of such failures
-include a disk failure, a worker process or machine crashing, or network
-problems that render a worker unreachable.
+A worker-level failure denotes any failure mode that can be confined to one or
+more worker nodes. In principle, all such failures are recoverable given the
+problem nodes are identified and alternative nodes containing duplicate data
+are available. Examples of such failures include a disk failure, a worker
+process or machine crashing, or network problems that render a worker
+unreachable.
 
-Consider the event of a disk failure. Qserv's worker logic is not
-equipped to manage such a failure on localized regions of disk and would
-behave as if a software fault had occurred. The worker process would
-therefore crash and all chunk queries belonging to that worker would be
-lost. The in-flight queries on its local mysqld would be cleaned up and
-have resources freed. The Qserv master's requests to retrieve these
-chunk queries via XRootD would then return an
-error code. The master responds by re-initializing the chunk queries and
-re-submits them to XRootD. Ideally, duplicate
-data associated with the chunk queries exists on other nodes. In this
-case, XRootD silently re-routes the request(s)
-to the surviving node(s) and all associated queries are completed as
-usual. In the event that duplicate data does not exist for one or more
-chunk queries, XRootD would again return an
-error code. The master will re-initialize and re-submit a chunk query a
-fixed number of times (determined by a parameter within Qserv) before
-giving up, logging information about the failure, and returning an error
-message to the user in response to the associated query.
+Consider the event of a disk failure. Qserv's worker logic is not equipped to
+manage such a failure on localized regions of disk and would behave as if a
+software fault had occurred. The worker process would therefore crash and all
+chunk queries belonging to that worker would be lost. The in-flight queries on
+its local mysqld would be cleaned up and have resources freed. The Qserv
+master's requests to retrieve these chunk queries via XRootD would then return
+an error code. The master responds by re-initializing the chunk queries and
+re-submits them to XRootD. Ideally, duplicate data associated with the chunk
+queries exists on other nodes. In this case, XRootD silently re-routes the
+request(s) to the surviving node(s) and all associated queries are completed
+as usual. In the event that duplicate data does not exist for one or more
+chunk queries, XRootD would again return an error code. The master will re-
+initialize and re-submit a chunk query a fixed number of times (determined by
+a parameter within Qserv) before giving up, logging information about the
+failure, and returning an error message to the user in response to the
+associated query.
 
 Error handling in the event that an arbitrary hardware or software bug
-(perhaps within the Qserv worker itself) causes a worker process or
-machine to crash proceeds in the same manner described above. The same
-is true in the event that network loss or transient
-sluggishness/overload has the limited effect of preventing
-XRootD from communicating with one or more
-worker nodes. As long as such failures are limited to a finite number of
-workers and do not extend to the Qserv master node,
-XRootD is designed to record the failure and
-return an error code. Moreover, if duplicate data exists on other nodes,
-this will be registered within XRootD, which
-will successfully route any subsequent chunk queries.
+(perhaps within the Qserv worker itself) causes a worker process or machine to
+crash proceeds in the same manner described above. The same is true in the
+event that network loss or transient sluggishness/overload has the limited
+effect of preventing XRootD from communicating with one or more worker nodes.
+As long as such failures are limited to a finite number of workers and do not
+extend to the Qserv master node, XRootD is designed to record the failure and
+return an error code. Moreover, if duplicate data exists on other nodes, this
+will be registered within XRootD, which will successfully route any subsequent
+chunk queries.
 
-In the event of an unrecoverable error, the Qserv master is equipped
-with a status/error messaging mechanism designed to both log detailed
-information about the failure and to return a human-readable error
-message to the user. This mechanism includes C++ exception handling
-logic that encapsulates all of the master's interactions with
-XRootD. If an unrecoverable exception occurs,
-the master gracefully terminates the query, frees associated resources,
-logs the event, and notifies the user. Qserv's internal status/error
-messaging system also generates a status message and timestamp each time
-an individual chunk query achieves a milestone. Such milestones include:
-chunk query dispatch, written to XRootD,
-results read from XRootD, results merged, and
-query finalized. This real-time status information provides useful
-context in the event of an unrecoverable error.
+In the event of an unrecoverable error, the Qserv master is equipped with a
+status/error messaging mechanism designed to both log detailed information
+about the failure and to return a human-readable error message to the user.
+This mechanism includes C++ exception handling logic that encapsulates all of
+the master's interactions with XRootD. If an unrecoverable exception occurs,
+the master gracefully terminates the query, frees associated resources, logs
+the event, and notifies the user. Qserv's internal status/error messaging
+system also generates a status message and timestamp each time an individual
+chunk query achieves a milestone. Such milestones include: chunk query
+dispatch, written to XRootD, results read from XRootD, results merged, and
+query finalized. This real-time status information provides useful context in
+the event of an unrecoverable error.
 
 Building upon the existing fault-tolerance and error handling features
-described above, future work includes introducing a heart-beat mechanism
-on worker nodes that periodically pings the worker process and will
-restart it in the event it becomes unresponsive. Similarly, a master
-monitoring process could periodically ping worker nodes and restart a
-worker machine if necessary. We are also considering managing failure at
-a per-disk level, but this would require research since
-application-level treatment of disk failure is relatively rare. It
-should also be possible to develop an interface for checking the
-real-time status of queries currently being processed by Qserv by
+described above, future work includes introducing a heartbeat mechanism on
+worker nodes that periodically pings the worker process and will restart it in
+the event it becomes unresponsive. Similarly, a master monitoring process
+could periodically ping worker nodes and restart a worker machine if
+necessary. We are also considering managing failure at a per-disk level, but
+this would require research since application-level treatment of disk failure
+is relatively rare. It should also be possible to develop an interface for
+checking the real-time status of queries currently being processed by Qserv by
 leveraging its internally used status/error messaging mechanism.
 
-\subsection{Next-to-database
-Processing}\label{next-to-database-processing}
+\subsection{Next-to-database Processing}\label{next-to-database-processing}
 
-We expect some data analyses will be very difficult, or even impossible
-to express through SQL language. This might be particularly useful for
-time-series analysis. For this type of analyses, we will allow users to
-execute their analysis algorithms in a procedural language, such as
-Python. To do that, we will allow users to run their own code on their
-own hardware resources co-located with production database servers.
-Users then run queries on the production database which stream rows
-directly from database cluster nodes to the user processing cluster,
-where arbitrary code may run without endangering the production
-database. This allows their incurred database I/O needs to be satisfied
-using the database system's shared scanning infrastructure while
-providing the full flexibility of running arbitrary code.
+We expect some data analyses will be very difficult, or even impossible to
+express through SQL language. This might be particularly useful for time-
+series analysis. For this type of analyses, we will allow users to execute
+their analysis algorithms in a procedural language, such as Python. To do
+that, we will allow users to run their own code on their own hardware
+resources co-located with production database servers. Users then run queries
+on the production database which stream rows directly from database cluster
+nodes to the user processing cluster, where arbitrary code may run without
+endangering the production database. This allows their incurred database I/O
+needs to be satisfied using the database system's shared scanning
+infrastructure while providing the full flexibility of running arbitrary code.
 
 \subsection{Administration}\label{administration}
 
 \subsubsection{Installation}\label{installation}
 
 Qserv as a service requires a number of components that all need to be
-running, and configured together. On the master node we require mysqld,
-mysql-proxy, XRootD, cmsd, Qserv metadata
-service, and the Qserv master process. On each of the worker nodes there
-will also be the mysqld, cmsd, and XRootD
-service. These major components come from the MySQL,
-XRootD, and Qserv distributions. But to get
-these to work together we will also require many more software package,
-such as protobuf, Lua, expat, libevent, python, zope, boost, Java,
-antlr, and so on. And many of these require more recent versions than
-you are provided in most system distributions. We have an installation
-layer, developed by SLAC, and LPC in Clermont-Ferrand, France in
-collaboration, which will determine the packages, configure, compile and
-install them in an automated process.
+running, and configured together. On the master node we require mysqld, mysql-
+proxy, XRootD, cmsd, Qserv metadata service, and the Qserv master process. On
+each of the worker nodes there will also be the mysqld, cmsd, and XRootD
+service. These major components come from the MySQL, XRootD, and Qserv
+distributions. But to get these to work together we also require many more
+software package, such as protobuf, Lua, expat, libevent, python, zope, boost,
+Java, antlr, and so on. And many of these require more recent versions than
+are provided in most system distributions.
 
-Currently, the Qserv installation procedure supports only the official
-LSST platform--- RHEL6, and SL6 Linux distributions. Other UNIX-like
-systems will be supported in the future as needed. The Qserv package
-first can be downloaded from SLAC for install. In the initial README
-there are basic install procedures, which start with a bootstrap script,
-that will perform a yum install of needed packages distributed with
-RHEL6, where the versions will support the Qserv install. Once that is
-done an install script can be started. This will first download needed
-packages not shipped with RHEL6 from SLAC, and get those installed
-first. All software will be installed into a sandbox root path, and all
-installed by the production username. Along with this is an install of
-MySQL from source that will be configured for Qserv. These further
-packages will be configured to run together, and then Qserv will be
-complied and linked to these installed packages. All this runs without
-user interaction, and usually completes within 15 to 20 minutes, to
-provide a complete Qserv either master or worker node.
+To manage both the complexity of deployment and the diversity of possible
+installation environments, we have adopted the use of Linux containers via
+Docker.  Service binaries and their user-space dependencies are bundled within
+containers which can then be deployed uniformly to any host running Docker
+with a recent enough Linux kernel, regardless of operating system
+distribution, package profile, patch levels, etc.
+
+We have experimented with several container orchestration technologies
+during development.  Of these, Kubernetes seems to be emerging as a clear
+leader, and is our current orchestration solution of choice.
 
 \subsubsection{Data loading}\label{data-loading}
 
@@ -2086,49 +2013,25 @@ bypassed.
 
 \subsubsection{Administrative scripts}\label{administrative-scripts}
 
-The administration of the Qserv cluster will require a set of scripts,
-all run from the one master machine, to control the large set of
-workers. The main admin script, qserv-admin, will supply the base needs,
-with starting all processes needed for the service, in order, and taking
-down all processes to stop the service. Also base monitoring of service
-is supplied here, to report on processes that are running, and
-responding to base queries, to check on MySQL or
-XRootD dying or locking up. Also is supplied
-is the updating of the configuration definitions from the master out to
-all workers, such that all machines need to have the same configurations
-for the services.
+The Qserv design originally had a somewhat complicated set of custom scripts
+and tools used to coordinate and sequence service launch and shutdown on a
+cluster, to monitor and report on service status, to automatically relaunch
+failed services, and to coordinate rolling software upgrades out onto a
+cluster.  We have recently found that all of these needs are directly met by
+container orchestration frameworks such as Kubernetes, and so we are currently
+in to process of removing this now-redundant tooling in order to simplify and
+standardize the design.
 
-The base data loading onto the nodes tends to be a slightly detailed
-process, beyond the just the data preparation. Up to now, data
-preparation produces text files in csv format, and then these will be
-loaded into the MySQL layer as a MyISAM table. The schema for these
-tables will need to have added to them the fields for chunk and subchunk
-number needed for the Qserv service. The modification of the schema and
-the control of the loading of the data, which can take hours, is done
-with the qserv-load script. The loading of the data is also done without
-index creation, and then that is done after the data loading. We are
-also experimenting with the use of compressed read-only tables for the
-data serving, and this is an option.
-
-Another needed setup for the data service in Qserv, is the creation of
-the ``emptyChunks'' list. The data will be spatially partitioned into
-``chunks'', as previously described, but the for the complete service,
-the master process with need to know how many chunks exist in the data,
-and which of these chunks contain no data. In queries which will involve
-a complete table scan, which chunks to create query, or not, will need
-to be known. Once the data is loaded, there is a another script which
-will go out to nodes and see what chunks are there, and compile a list
-of all possible chunks and which chunks do not contain data, or the
-``emptyChunks'' lists. This is loaded by the Qserv master process at
-startup.
-
-\subsection{Result Correctness}\label{result-correctness}
-
-To verify Qserv does not introduce any unexpectedly alter results (e.g.,
-does not show the same object twice or does not miss any objects on the
-chunk boundaries), we developed an automated testbed, which allows us to
-run preset queries on preset data sets both through plain MySQL and
-through Qserv, and compare results.
+Data ingest still tends to be a slightly detailed process, beyond just data
+preparation. Up to now, data preparation produces text files in CSV format
+which are then loaded into the MySQL layer as a MyISAM table. The schema for
+these tables then needs to be elaborated in places with columns for chunk and
+subchunk number.  Loading is done with index-creation suspended, and indices
+and table statistics for the query planner need to be explicitly generated
+on each worker after the load.  Additionally, a list of chunks on the sky
+for which no data has been loaded must be generated to aid in efficient
+query dispatch.  All of these activities are currently coordinated by a
+Python qserv-loader script.
 
 \subsection{Current Status and Future
 Plans}\label{current-status-and-future-plans}
