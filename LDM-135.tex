@@ -64,27 +64,13 @@ This document discusses the LSST database system architecture.
 
 \section{Executive Summary}\label{executive-summary}
 
-The LSST baseline database architecture for its massive user query
-access system is an MPP (massively parallel processing) relational
-database composed of a single-node non-parallel DBMS, a distributed
-communications layer, and a master controller, all running on a
-shared-nothing cluster of commodity servers with locally attached
-spinning disk drives, capable of incremental scaling and recovering from
-hardware failures without disrupting running queries. All large catalogs
-are spatially partitioned horizontally into materialized \emph{chunks},
-and the remaining catalogs are replicated on each server; the chunks are
-distributed across all nodes. The Object catalog is further partitioned
-into \emph{sub-chunks} with overlaps, materialized on-the-fly when
-needed. Chunking is handled automatically without exposure to users.
-Selected tables are also partitioned vertically to maximize performance
-of most common analysis. The system uses a few critical indexes to speed
-up spatial searches, time series analysis, and simple but interactive
-queries. Shared scans are used to answer all but the interactive
-queries. Such an architecture is primarily driven by the variety and
-complexity of anticipated queries, ranging from single object lookups to
-complex \(O(n^2)\) full-sky correlations over billions of elements.
+Two facets of LSST database architecture and their motivating requirements
+are discussed: database architecture in support of real time Alert Production,
+and database architecture in support of user query access to catalog data.
+Following this, Qserv is explored in depth as an implementation of the query
+access architecture.
 
-The LSST baseline database architecture for its real time Alert
+The LSST baseline database architecture for real time Alert
 Production relies on horizontal time-based partitioning. To guarantee
 reproducibility, no-overwrite-update techniques combined with
 maintaining validity time for appropriate rows are employed. Two
@@ -92,55 +78,59 @@ database replicas are maintained to isolate live production catalogs
 from user queries; the replicas are synchronized in real time using
 native database replication.
 
-Given the current state of the RDBMS and Map/Reduce market, an
-RDBMS-based solution is a much better fit, primarily due to features
-such as indexes, schema and speed. No off-the-shelf, reasonably priced
-solution meets our requirements (today), even though production systems
-at a scale comparable to LSST have been demonstrated already by
-industrial users such as eBay using a prohibitively expensive,
-commercial RDBMS.
+The LSST baseline database architecture for user query access to catalog data
+is an MPP (massively parallel processing) relational database composed of a
+single-node non-parallel DBMS, a distributed communications layer, and a
+master controller, all running on a shared-nothing cluster of commodity
+servers with locally attached spinning disk drives, capable of incremental
+scaling and recovering from hardware failures without disrupting running
+queries. All large catalogs are spatially partitioned horizontally into
+materialized \emph{chunks}, and the remaining catalogs are replicated on each
+server; the chunks are distributed across all nodes. The Object catalog is
+further partitioned into \emph{sub-chunks} with overlaps, materialized on-the-
+fly when needed. Chunking is handled automatically without exposure to users.
+Selected tables are also partitioned vertically to maximize performance of
+most common analysis. The system uses a few critical indexes to speed up
+spatial searches, time series analysis, and simple but interactive queries.
+Shared scans are used to answer all but the interactive queries. Such an
+architecture is primarily driven by the variety and complexity of anticipated
+queries, ranging from single object lookups to complex \(O(n^2)\) full-sky
+correlations over billions of elements.
 
-The baseline design involves many choices such as component technology,
-partition size, index usage, normalization level, compression
-trade-offs, applicability of technologies such as solid state disks,
-ingest techniques and others. We ran many tests to determine the design
-configuration, determine limits and uncover potential bottlenecks. In
-particular, we chose \emph{MySQL} as our baseline open source,
-single-node DBMS and XRootD\footnote{\url{http://xrootd.org}} \citep{Dorigo:2005:XRootd}
-as an open source, elastic, distributed, fault-tolerant messaging system.
+A prototype implementation of the baseline architecture for user query access
+as described above, \emph{Qserv}, was developed during the R&D phase of LSST,
+and its feasibility was demonstrated in early testing.  Productization was
+subsequently planned and resourced for the construction phase of LSST and is
+presently underway.
 
-We developed a prototype of the baseline architecture, called
-\emph{Qserv}. To mitigate major risks, such as insufficient scalability
-or potential future problems with the underlying RDBMS, Qserv pays close
-attention to minimizing exposure to vendor-specific features and
-add-ons. Many key features including the scalable dispatch system and
-2-level partitioner have been implemented at the prototype level and
-integrated with the two underlying production-quality components: MySQL
-and XRootD. Scalability and performance have
-been successfully demonstrated on a variety of clusters ranging from
-20-node-100TB cluster to 300-node-30TB cluster, tables as large as 50
-billion rows and concurrency exceeding 100,000 in-flight chunk-queries.
-Required data rates for all types of queries (interactive, full sky
-scans, joins, correlations) have been achieved. Basic fault tolerance
-recovery mechanisms and basic version of shared scans were demonstrated.
-Future work includes adding support for user tables, demonstrating
-cross-matching, various non-critical optimizations, and most
-importantly, making the prototype more user-friendly and turning it into
-a production-ready system.
+Qserv leverages two mature, open-source technologies as major components of
+its design: MySQL as a SQL execution engine (though any alternative SQL engine
+could be substituted without undue effort if need be), and
+XRootD\footnote{\url{http://xrootd.org}} \citep{Dorigo:2005:XRootd} to provide
+a distributed-system framework for fault-tolerant, elastic, content-addressed
+messaging.
 
-If an equivalent open-source, community supported, off-the-shelf
-database system were to become available, it could present significant
-support cost advantages over a production-ready Qserv. The largest
-barrier preventing us from using an off-the-shelf system is spherical
-geometry and spherical partitioning support.
+We currently maintain three running instances of Qserv at a scale of
+approximately 30 physical nodes each in continuous operation on dedicated
+hardware clusters at NCSA and CC-IN2P3. The system has been demonstrated to
+correctly distribute and execute both low and high volume queries, including
+small-area cone and object searches, region restricted queries, and full table
+scans including large-area near-neighbor searches. Analytic queries involving
+SciSQL UDFs in both filter and aggregation clauses have also been
+demonstrated. Scale testing has been successfully conducted on the
+above-mentioned clusters with datasets of up to approximately 70 TB, and we
+expect to cross the 100 TB mark as tests continue in 2017. To date the system
+is on track through a series of graduated data-challenge style tests to meet
+or exceed the stated performance requirements for the project.
+
+If an equivalent open-source, community supported, off-the-shelf database
+system were to become available in time, it could present significant support
+cost advantages over a production-ready Qserv. The largest barrier preventing
+us from using an off-the-shelf system is lack of sufficient spherical geometry
+and spherical partitioning support.
 
 To increase the chances such a system will become reality in the next
-few years, in 2008 we initiated the SciDB array-based scientific
-database project. Due to lack of many traditional RDBMS-features in
-SciDB and still nascent fault tolerance, we believe it is easier to
-build the LSST database system using
-MySQL+XRootD than it would be to build it
-based on SciDB. In addition we closely collaborate with the MonetDB open
+few years, we closely collaborate with the MonetDB open
 source columnar database team -- a successful demonstration of Qserv
 based on MonetDB instead of MySQL was done in 2012. Further, to stay
 current with the state-of-the-art in petascale data management and
