@@ -2059,16 +2059,15 @@ The shared-scan implementation is substantially complete, and functions per
 design to enable high levels of concurrency without degraded full-scan query
 performance.
 
-A metadata system, as described above, for both static and dynamic metadata is
-in place, and basic query management facilities (query cancellation and
+The metadata system, as described above, for both static and dynamic metadata
+is in place, and basic query management facilities (query cancellation and
 monitoring) have been implemented.
 
-The system is currently containerized (Docker) for cluster deployment, and
-includes a comprehensive set of unit and regression tests that are integrated
-with the build and CI systems.
+The system includes a comprehensive set of unit and regression tests that are
+integrated with the build and CI systems.
 
 In addition to background ongoing effort to improve query performance and
-extend query coverage, future implementation work includes:
+extend query coverage, implementation work ahead includes:
 
 \begin{itemize}
 \item
@@ -2082,7 +2081,7 @@ extend query coverage, future implementation work includes:
 \item
   next-to-data processing framework;
 \item
-  improvements to administration scripts;
+  improvements to administration procedures and scripts;
 \item
   authentication and authorization;
 \item
@@ -2091,25 +2090,18 @@ extend query coverage, future implementation work includes:
   security.
 \end{itemize}
 
-\textbf{Automatic data distribution and replication}. An important element of
-Qserv's fault tolerance and recovery strategy involves maintaining distributed
-replicas of data within the cluster so data remains online in the face of a
-reasonable number of concurrent disk or node failures.  We have experimented
+\textbf{Automatic data distribution and replication}. We have experimented
 successfully with static replication of data at ingest time, but for
-production a system which will automatically place data and respond
-dynamically to node arrivals and departures (both planned and unplanned) will
-be required.  Such a system is currently under development.
+production a system which will automatically place data and dynamically
+respond dynamically to node arrivals and departures will be required.
+This is currently under active development.
 
-\textbf{Improved query management and monitoring tools}. When performing
-interactive exploration of an observational data set, users frequently issue
-large-scale queries that produce undesired results, even after testing
-such queries on small subsets of the data. We can ameliorate this
-behavior by providing the investigator with early partial results from
-the query, allowing the user to recognize that the returned values are
-incorrect and permitting the query to be aborted without wasting
-additional resources.  A facility to enable clients to temporarily disconnect
-from long-running queries and later rendezvous to check query progress and/or
-collect results is also required.
+\textbf{Improved query management and monitoring tools}. The facility to
+enable clients to temporarily disconnect from long-running queries and later
+rendezvous to check query progress and/or collect results is currently under
+active development.  Facilities to return partial results and estimate
+completion times and data sizes for long-running queries remain to be
+implemented.
 
 \textbf{Demonstrating cross-match with external catalogs}. One of the use
 cases involves cross matching with external catalogs. In cases where the
@@ -2126,10 +2118,10 @@ within the system.
 results to dedicated nodes where user-submitted code can run against
 those streams has yet to be implemented.
 
-\textbf{Improvements to administration scripts}. To further automate
-common tasks related to database management, table management, partition
-management, data distribution, and others we need to implement many
-improvements to our administration scripts.
+\textbf{Improvements to administration procedures and scripts}. To further
+automate common tasks related to database management, table management,
+partition management, data distribution, and others we need to implement
+various  improvements to our administration procedures and scripts.
 
 \textbf{Authentication and authorization}. A production database system should
 provide some facility for user or role-based access so that usage can be
@@ -2159,8 +2151,8 @@ that are still being discussed and where changes are possible.
   instance can be worked around by treating Level 3 products as immutable once
   ingested; should changes to a Level 3 product be required, that product
   would be dropped and re-ingested/regenerated rather than updated in place.
-  If it were to become necessary to support row updates and/or transactions
-  directly within Qserv, some considerable changes to the Qserv architecture
+  If it were deemed necessary that Qserv support row updates and/or
+  transactions directly, some considerable changes to the Qserv architecture
   would likely be required.
 \item
   \textbf{Very large objects}. Some objects (e.g. large galaxies) are
@@ -2203,62 +2195,44 @@ that are still being discussed and where changes are possible.
 \subsection{Potential Key Risks}\label{potential-key-risks}
 
 Insufficient \textbf{database performance and scalability} is one of the
-major risks \citedsp{Document-7025}.
+major stated major risks for DM \citedsp{Document-7025}.
 
-We have a prototype system (\emph{Qserv}) that will be turned into a
-production system. Given that a large fraction of its functionality is
-derived from two stable, production quality, open source components
-(MySQL and XRootD), turning it into production
-system is possible during the LSST construction phase.
+Qserv as an implementation of the baseline architecture meeting the
+requirements referenced above is already well on its way, and is currently
+resourced and scheduled for completion on time and within budget.
 
-A viable alternative might be to use an off-the-shelf system. In fact,
-an off-the-shelf solution could present significant support cost
-advantages over a production-ready Qserv, especially if it is a system
-well supported by a large user and developer community. It is likely
-that an open source, scalable solution will be available on the time
-scale needed by LSST (for the beginning of LSST construction a stable
-beta would suffice, beginning of production scalability approaching few
-hundred terabytes would be sufficient). Database systems larger than the
-largest single LSST data set have been successfully demonstrated in
-production today. For example, eBay manages a 10+ petabyte production
-database \citep{Monash:2010:ebay} and expects to deploy a 36 petabyte system
-later in 2011. For comparison, the largest single LSST data set,
-including all indexes and overheads is expected to be below 10 petabytes
-in size, and will be produced \textasciitilde{}20 years from now (the
-last Data Release).\footnote{The numbers, both for eBay and LSST are for
-  compressed data sets.} The eBay system is based on an expensive
-commercial DBMS (Teradata), but there is a growing demand for large
-scale systems and growing competition in that area (Hadoop, SciDB,
-Greenplum, InfiniDB, MonetDB, Caché and others).
+A viable alternative might be to use an off-the-shelf system. In fact, an off-
+the-shelf solution could present significant support cost advantages over a
+production-ready Qserv, especially if it is a system well supported by a large
+user and developer community. It is likely that an open source, scalable
+solution will be available on the time scale needed by LSST (for the beginning
+of production scalability approaching few hundred terabytes would be
+sufficient). Database systems larger than the largest single LSST data set
+have been successfully demonstrated in production today.  There is a growing
+demand for large scale systems and growing competition in that area (Hadoop,
+Greenplum, InfiniDB, MonetDB, Caché and others).  Greenplum, which was a
+closed-source project at the outset of LSST, is now available as open-source.
 
 Finally, a third alternative would be to use a closed-source, non free
-software, such as Caché, InfiniDB or Greenplum (Teradata is too
-expensive). Some of these systems, in particular Caché and InfiniDB are
-very reasonably priced. We believe the largest barrier preventing us
-from using an off-the-shelf DBMS such as InfiniDB is spherical geometry
-and spherical partitioning support.
+software, such as Caché or InfiniDB (Teradata is too expensive). Some of these
+systems are very reasonably priced. We believe the largest barrier preventing
+us from using an off-the-shelf DBMS such as InfiniDB is poorly developed
+spherical geometry and spherical partitioning support.
 
 Potential \textbf{problems with off-the-shelf database software} used,
 such as MySQL is another potential risk. MySQL has recently been
 purchased by Oracle, leading to doubts as to whether the MySQL project
 will be sufficiently supported in the long-term. Since the purchase,
 several independent forks of MySQL software have emerged, including
-MariaDB (supported by one of the MySQL founders),
-Drizzle\footnote{Now abandoned:
-\url{https://en.wikipedia.org/wiki/Drizzle_\%28database_server\%29}}
-(supported by key architects of
-MySQL), and Percona. Should MySQL disappear, these open-source,
-MySQL-compatible\footnote{With the exception of
-  Drizzle, which introduced major changes to
-  the architecture.} systems are a solid alternative. Should we need to
+MariaDB (supported by one of the MySQL founders) and Percona. Should MySQL disappear, these open-source,
+MySQL-compatible systems are a solid alternative. Should we need to
 migrate to a different DBMS, we have taken multiple measures to minimize
 the impact:
 
 \begin{itemize}
 \item
   our schema does not contain any MySQL-specific elements and we have
-  successfully demonstrating using it in other systems such as MonetDB
-  and Microsoft's SQL Server;
+  successfully demonstrated using it in other systems such as MonetDB;
 \item
   we do not rely on any MySQL specific extensions, with the exception of
   MySQL Proxy, which can be made to work with non-MySQL systems if
@@ -2275,15 +2249,15 @@ so far include spatial and temporal correlations which exhibit
 \(O(n^2)\) performance characteristics, searching for anomalies and rare
 events, as well as searching for unknown are a risk as well -- in most
 cases industrial users deal with much simpler, well defined access
-patters. Also, some analysis will be ad-hoc, and access patterns might
+patterns. Also, some analysis will be ad-hoc, and access patterns might
 be different than these we are anticipating. Recently, large-scale
-industrial users started to express strong need for similar types of
+industrial users have started to express strong need for similar types of
 analyses; understanding and correlating user behavior (time-series of
 user clicks) run by web companies, searching for abnormal user behavior
 to detect fraud activities run by banks and web companies, analyzing
 genome sequencing data run by biotech companies, and what-if market
 analysis run by financial companies are just a few examples. Typically
-these analysis are ad-hoc and involve searching for unknowns, similar to
+these analyses are ad-hoc and involve searching for unknowns, similar to
 scientific analyses. As the demand (by rich, industrial users) for this
 type of complex analyses grows, the solution providers are rapidly
 starting to add needed features into their systems.
@@ -2317,28 +2291,24 @@ risk registry:
 
 \subsection{Risks Mitigations}\label{risks-mitigations}
 
-To mitigate the insufficient performance/scalability risk, we developed
-Qserv, and demonstrated scalability and performance. In addition, to
-increase chances an equivalent open-source, community supported,
-off-the-shelf database system becomes available in the next few years,
-we initiated the SciDB array-based scientific database project and work
-closely with its development team. We also closely collaborate with the
-MonetDB open source columnar database team -- building on our Qserv
-lessons-learned, they are trying to add missing features and turn their
-software into a system capable of supporting LSST needs. A demonstration
-is expected in late 2011. Further, to stay current with the
-state-of-the-art in petascale data management and analysis, we continue
-a dialog with all relevant solution providers, both DBMS and Map/Reduce,
-as well as with data-intensive users, both industrial and scientific,
-through the XLDB conference and workshop series
-we lead, and beyond.
+To mitigate the insufficient performance/scalability risk, we developed Qserv,
+and demonstrated scalability and performance. In addition, to increase chances
+an equivalent open-source, community supported, off-the-shelf database system
+becomes available we have closely collaborated with the MonetDB open source
+columnar database team -- building on our Qserv lessons-learned, they are
+trying to add missing features and turn their software into a system capable
+of supporting LSST needs. Further, to stay current with the state-of-the-art
+in petascale data management and analysis, we continue a dialog with all
+relevant solution providers, both DBMS and Map/Reduce, as well as with data-
+intensive users, both industrial and scientific, through the XLDB conference
+and workshop series we lead, and beyond.
 
 To understand query complexity and expected access patterns, we are
 working with LSST Science Collaborations and the LSST Science Council to
 understand the expected query load and query complexity. We have
 compiled a set of common queries \citep{CommonQueries} and distilled
 this set into a smaller set of representative queries we use for various
-scalability tests--this set represents each major query type, ranging
+scalability tests -- this set represents each major query type, ranging
 from trivial low volume, to complex correlations \citep{PerfTests}. We
 have also talked to scientists and database developers from other
 astronomical surveys, including SDSS, 2MASS, Gaia, DES, LOFAR and
