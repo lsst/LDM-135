@@ -1646,8 +1646,8 @@ scan latencies as follows:
     \texttt{Object\_APMean}} queries (join): 8 hours.
 \end{itemize}
 
-There are be schedulers for queries that are expected to take one hour, eight
-hours, or twelve hours. The schedulers group the the tasks by chunk id and
+There are separate schedulers for queries that are expected to take one hour, eight
+hours, or twelve hours. The schedulers group the tasks by chunk id and
 then the highest scan rating of the all tables in the task. The scan ratings
 are meant to be unique per table and indicative of the size of the table, so
 this sorting places scans using the largest table from the same chunk next to
