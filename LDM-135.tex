@@ -725,7 +725,7 @@ managed, and aggregated. Thus a greater number of partitions increases
 the potential for parallelism but also increases the overhead. For a
 data-intensive and bandwidth-limited query, a parallelization width
 close to the number of disk spindles should minimize seeks and
-maximizing bandwidth and performance.
+maximize bandwidth and performance.
 
 From a management perspective, more partitions facilitate re-balancing
 data among nodes when nodes are added or removed. If the number of
@@ -781,7 +781,7 @@ spherical geometry-based partitioning was non-existent in other
 solutions when we decided to develop Qserv. Since spherical geometry is
 the norm in recording positions of celestial objects (right-ascension
 and declination), any spatial partitioning scheme for astronomical
-object must account for its complexities.
+objects must account for its complexities.
 
 \paragraph{Data immutability}\label{data-immutability}
 
