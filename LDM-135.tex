@@ -652,7 +652,7 @@ cores.
 Running multiple shared scans allows relatively fast response time for
 Object-only queries, and supporting complex, multi-table joins:
 synchronized scans are required for two-way joins between different
-tables. For a self-joins, a single shared scans will be sufficient,
+tables. For self-joins, a single shared scan will be sufficient,
 however each node must have sufficient memory to hold 2 chunks at any
 given time (the processed chunk and next chunk). Refer to the sizing
 model \citedsp{LDM-141} for further details on the cost of shared scans.
@@ -671,12 +671,12 @@ collocated on disk. All Source-type catalogs (Source, ForcedSource,
 DiaSource, DiaForcedSource) will be clustered based on their
 corresponding objectId -- this approach enforces spatial clustering and
 collocates sources belonging to the same object, allowing sequential
-read for queries that involve times series analysis.
+read for queries that involve time series analysis.
 
 SSObject catalog will be unpartitioned, because there is no obvious
 fixed position that we could choose to use for partitioning. The
 associated diaSources (which will be intermixed with diaSources
-associated with static diaSources) will be partitioned, according their
+associated with static diaSources) will be partitioned, according to their
 position. For that reason the SSObject-to-DiaSource join queries will
 require index searches on all chunks, unlike DiaObject-to-DiaSource
 queries. Since SSObject is small (low millions), this should not be an
