@@ -1516,8 +1516,7 @@ schedulers are starved for threads as well as enough memory available to lock
 all the tables for the task in memory. If the scheduler has no tasks running,
 it may start one task and have memory reserved for the tables in that task.
 This should prevent any scheduler from hanging due to memory starvation
-without requiring complicated logic, but it could incur extra disk I/O. More
-on locking tables in memory later.
+without requiring complicated logic, but it could incur extra disk I/O.
 
 Schedulers check for tasks by first checking the top of the active
 priority queue. If the active priority queue is empty, and the pending
