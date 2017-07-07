@@ -694,7 +694,7 @@ queries}\label{sharded-data-and-sharded-queries}
 
 All catalogs that require spatial partitioning (Object, Source,
 ForcedSource, DiaSource, DiaForcedSource) as well as all the auxiliary
-tables associated with them, such as ObjectType, or PhotoZ, will be
+tables associated with them, such as Object\_Extra, will be
 divided into spatial partitions of roughly the same area by partitioning
 then into \emph{declination} zones, and chunking each zone into
 \emph{RA} stripes. Further, to be able to perform table joins without
