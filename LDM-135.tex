@@ -50,8 +50,8 @@ This document discusses the LSST database system architecture.
   \addtohist{2.1}{2011-08-12}{Refreshed future-plans and schedule of testing sections, added section about fault tolerance.}{Jacek Becla, Daniel Wang}
   \addtohist{3.0}{2013-08-02}{Synchronized with latest changes to the requirements \citedsp{LSE-163}. Rewrote most of the “Implementation” chapter. Documented new tests, refreshed all other chapters.}{Jacek Becla, Daniel Wang, Serge Monkewitz, Kian-Tat Lim, Douglas Smith, Bill Chickering}
   \addtohist{3.1}{2013-10-10}{Refreshed numbers based on latest \citeds{LDM-141}. Updated shared scans (implementation) and 300-node test sections, added section about shared scans demonstration}{Jacek Becla, Daniel Wang}
-  \addtohist{3.2}{2013-10-10}{TCT approved}{R Allsman}
-  \addtohist{}{2016-07-18}{Update with async query, shared scan, secondary index, xrootd, metadata service information.}{John Gates, Andy Salnikov, Andrew Hanushevsky, Michael Kelsey, Fritz Mueller}
+  \addtohist{3.2}{2013-10-10}{TCT approved}{R Almsman}
+  \addtohist{}{2016-07-18}{Update with async query, shared scan, secondary index, XRootD, metadata service information.}{John Gates, Andy Salnikov, Andrew Hanushevsky, Michael Kelsey, Fritz Mueller}
   \addtohist{}{2017-07-05}{Move historical investigations to separate documents: \citeds{DMTN-046,DMTN-047,DMTN-048,DMTR-21,DMTR-12}}{T.~Jenness}
 }
 
@@ -142,7 +142,7 @@ MySQL+XRootD than it would be to build it
 based on SciDB. In addition we closely collaborate with the MonetDB open
 source columnar database team -- a successful demonstration of Qserv
 based on MonetDB instead of MySQL was done in 2012. Further, to stay
-current with the state-of-the-art in peta-scale data management and
+current with the state-of-the-art in petascale data management and
 analysis, we continue a dialog with all relevant solution providers,
 both DBMS and Map/Reduce, as well as with data-intensive users, both
 industrial and scientific, through the XLDB\footnote{\url{https://xldb.org}}
@@ -168,7 +168,7 @@ and decision process, including small scale tests that were run and some Qserv d
 
 This section describes the most important aspects of the LSST baseline
 database architecture. The choice of the architecture is driven by the
-project requirements (see reqs) as well as cost, availability and
+project requirements (see \citeds{DLM-555}) as well as cost, availability and
 maturity of the off-the-shelf solutions currently available on the
 market (see \citeds{DMTN-046}), and design trade-offs (see
 \citeds{DMTN-048}). The architecture is periodically revisited: we
@@ -238,17 +238,17 @@ Versions as of some time \emph{t} are retrievable via:
 SELECT * FROM DiaObject WHERE validityStart <= t AND t < validityEnd
 \end{lstlisting}
 
-Note that a DiaSource can also be reassociated to a solar-system object
+Note that a DiaSource can also be re-associated to a solar-system object
 during day time processing. This will result in a new DiaObject version
 unless the DiaObject no longer has any associated DiaSources. In that
 case, the validity end time of the existing version is set to the time
-at which the reassociation occurred.
+at which the re-association occurred.
 
 Once a DiaSource is associated with a solar system object, it is never
 associated back to a DiaObject. Therefore, rather than also versioning
 DiaSources, columns for the IDs of both the associated DiaObject and
-solar system object, as well as a reassociation time, are included.
-Reassociation will set the solar system object ID and reassociation
+solar system object, as well as a re-association time, are included.
+Re-association will set the solar system object ID and re-association
 time, so that DiaSources for DiaObject 123 at time \emph{t} can be
 obtained using:
 
@@ -260,7 +260,7 @@ AND midPointTai <= t
 AND (ssObjectId is NULL OR ssObjectReassocTime > t)
 \end{lstlisting}
 
-DiaForcedSources are never reassociated or updated in any way.
+DiaForcedSources are never re-associated or updated in any way.
 
 From the database point of view then, the alert production pipeline will
 perform the following database operations 189 times (once per LSST CCD)
@@ -340,7 +340,7 @@ queries, such as large-area near neighbor queries, will not be needed.
 Instead, user queries will consist mainly of small-area cone searches,
 light curve lookups, and historical versions of the same. Since the
 catalogs are sorted spatially, we expect to be able to quickly answer
-spatial queries using indexed HTM ID columns and the scisql UDFs, an
+spatial queries using indexed HTM ID columns and the SciSQL UDFs, an
 approach that has worked well in data-challenges to date. Furthermore,
 note that the positions of diaSources/diaForcedSources associated with
 the same diaObject will be very close together, so that sorting to
@@ -439,7 +439,7 @@ piece while it is in memory. In this way, results from many full-scan
 queries can be returned in little more than the time for a single
 full-scan query. Shared scanning also lowers the cost of data
 compression by amortizing the CPU cost among the sharing queries,
-tilting the tradeoff of increased CPU cost versus reduced I/O cost
+tilting the trade-off of increased CPU cost versus reduced I/O cost
 heavily in favor of compression.
 
 Shared scanning will be used for all high-volume and super-high volume
@@ -546,7 +546,7 @@ data-intensive and bandwidth-limited query, a parallelization width
 close to the number of disk spindles should minimize seeks and
 maximizing bandwidth and performance.
 
-From a management perspective, more partitions facilitate rebalancing
+From a management perspective, more partitions facilitate re-balancing
 data among nodes when nodes are added or removed. If the number of
 partitions were equal to the number of nodes, then the addition of a new
 node would require the data to be re-partitioned. On the other hand, if
@@ -580,7 +580,7 @@ A strict partitioning eliminates nearby pairs where objects from
 adjacent partitions are paired. To produce correct results under strict
 partitioning, nodes need access to objects from outside partitions,
 which means that data exchange is required. To avoid this, each
-partition can be stored with a pre-computed amount of overlapping data.
+partition can be stored with a precomputed amount of overlapping data.
 This overlapping data does not strictly belong to the partition but is
 within a preset spatial distance from the partition's borders. Using
 this data, spatial joins can be computed correctly within the preset
@@ -620,7 +620,7 @@ system will support asynchronous query execution mode. In this mode
 users will submit queries using special options or syntax and the system
 will dispatch a query and immediately return to user some identifier of
 the submitted query without blocking user session. This query identifier
-will be used by user to retirieve query processing status, query result
+will be used by user to retrieve query processing status, query result
 after query completes, or a partial query result while query is still
 executing.
 
@@ -712,7 +712,7 @@ Level 1 data, and occasional changes that do not alter query
 results\footnote{Example of non-altering changes including
   adding/removing/resorting indexes, adding a new column with derived
   information, changing type of a column without loosing information,
-  (eg., \texttt{FLOAT} to \texttt{DOUBLE} would be always allowed,
+  (e.g. \texttt{FLOAT} to \texttt{DOUBLE} would be always allowed,
   DOUBLE to \texttt{FLOAT} would only be allowed if all values can be
   expressed using \texttt{FLOAT} without loosing any information)} for
 the Level 2 data after the data has been released. Schemas for different
@@ -782,7 +782,7 @@ The large catalog query load is specified as follows:
     Throughput of 1 query per hour with average latency of 8 hours for
     scans of the full Object table or joins of it with up to three
     additional tables other than Source and ForcedSource. These provide
-    ``adhoc'' access for complex queries.
+    ``ad hoc'' access for complex queries.
   \item
     Throughput of 1 query per hour with average latency of 8 hours for
     scans of the full Object table in the previous Data Release or joins
@@ -1017,7 +1017,7 @@ risk registry:
 \item
   DM-061: Provenance capture inadequate
 \item
-  DM-065: LSST DM software architecture incompatible with de-facto
+  DM-065: LSST DM software architecture incompatible with de facto
   community standards
 \item
   DM-070: Archive sizing inadequate
@@ -1039,7 +1039,7 @@ MonetDB open source columnar database team -- building on our Qserv
 lessons-learned, they are trying to add missing features and turn their
 software into a system capable of supporting LSST needs. A demonstration
 is expected in late 2011. Further, to stay current with the
-state-of-the-art in peta-scale data management and analysis, we continue
+state-of-the-art in petascale data management and analysis, we continue
 a dialog with all relevant solution providers, both DBMS and Map/Reduce,
 as well as with data-intensive users, both industrial and scientific,
 through the XLDB conference and workshop series
@@ -1248,7 +1248,7 @@ provide the flexibility to modules that manipulate the physical
 structures while offering the simpler single-query representation to
 modules that do not require the complexity. The clear separation between
 parsing, whose only goal is to provide a intelligible and modifiable
-query representation, and the qserv-specific analysis and manipulation
+query representation, and the Qserv-specific analysis and manipulation
 is a key factor in the overall flexibility, maintainability, and
 extensibility of the system and should help the system adapt to current
 and future LSST needs.
@@ -1288,7 +1288,7 @@ problems whose solution could significantly improve overall query
 latency by avoiding mutating metadata operations on worker and frontend
 DBMS systems. Thus the baseline system will encode results in protobuf
 messages containing schema and row-by-row encoded data values. Streaming
-results directly from worker dbms instances into frontend dbms instances
+results directly from worker DBMS instances into frontend DBMS instances
 is a technique under consideration, as is a custom aggregation engine
 for results that would likely ease the implementation of providing
 partial query results to end users.
@@ -1307,7 +1307,7 @@ the Scalable Service Interface (SSI) became available in early
 2015 and Qserv has since been ported to use this interface. The port
 eliminated a significant body of code that maps dispatching and
 result-retrieving to file operations. The SSI API will reside
-in the Xroot code base, where it may be exercised by other projects.
+in the XRootD code base, where it may be exercised by other projects.
 
 The SSI API provides Qserv with a fully asynchronous interface
 that eliminates nearly all blocking threads used by the Qserv frontend
@@ -1351,7 +1351,7 @@ making the logic relatively easy to follow and the implementation less
 error prone.
 
 Threads are maintained in a thread pool to perform incoming queries and
-wait on calls into the DBMS's API (currently, the apparently synchrnous
+wait on calls into the DBMS's API (currently, the apparently synchronous
 MySQL C-API). Threads are allowed to run in observance of the amount of
 parallel resources available. The worker estimates the I/O dependency of
 each incoming chunk query in terms of the chunk tables involved and disk
@@ -1385,15 +1385,15 @@ Frontend-python & Single-threaded asynchronous reactor; blocking-thread per user
 query \\ \hline
 Frontend-C++ & Processing thread per user-query for preparation; Results-merging
 thread-per-user-query on-demand; \\ \hline
-Frontend-xrootd &
+Frontend-XRootD &
 Callback threads perform query transmission and results retrieval \\ \hline
-Frontend-xrootd internal &
+Frontend-XRootD internal &
 Threads for maintaining worker connections (\textless{} 1 per
 host) \\ \hline
-Xrootd, cmsd &
+XRootD, cmsd &
 Small thread pools for managing live network connections and performing
 lookups \\ \hline
-Worker-xrootd plugin &
+Worker-XRootD plug-in &
 Small thread pool O(\#cores) to make blocking mysql C-API calls into
 local mysqld; callback threads from XRootD
 perform admission/scheduling of tasks from frontend and transmission of
@@ -1409,7 +1409,7 @@ MIN(), and SUM(), and should support SQL92 level GROUP BY.
 \subsection{Indexing}\label{indexing-1}
 
 The secondary index utilizes one or more tables using the InnoDB storage
-engine on each czar to perform lookups on the database's key colume
+engine on each czar to perform lookups on the database's key column
 (objectId). Performance tests (Figure~\ref{fig:indexing-tests}) on a
 single, dual-core host with 1 TB hard disk storage (not SSD) have shown
 that this configuration will support a full load of 40 billion rows in
@@ -1451,7 +1451,7 @@ sorted by objectId, and may be divided into roughly equal ``splits''.
 Each of those splits is loaded into a table \emph{en masse}.
 
 To fully optimize the loading and table splitting, the entire index
-should be collected from all workers and pre-sorted in memory on the
+should be collected from all workers and presorted in memory on the
 czar. This is not reasonable for 40 billion entries (requiring a minimum
 of 480 GB memory, plus overhead). Instead, the index data from a single
 worker can be assumed to be a ``representative sample'' from the full
@@ -1560,7 +1560,7 @@ entire Qserv cluster.
 Implementation of the static metadata in Qserv is based on hierarchical
 key-value storage which uses a regular MySQL database as a storage
 backend. This database is shared between multiple masters and it must be
-served by a fault-taulerant MySQL server instance, e.g. using a
+served by a fault-tolerant MySQL server instance, e.g. using a
 master-master replication solution like MariaDB Galera cluster. Database
 consistency is critical for metadata and it should be implemented using
 one of the transactional database engines in MySQL.
@@ -1610,12 +1610,12 @@ The main clients of the static metadata are:
 
 In addition to static metadata, a Qserv cluster also needs to track its
 current state, and keep various statistics about query execution. This
-sort of data is udated frequently, several times per query execution,
+sort of data is updated frequently, several times per query execution,
 and is called dynamic metadata.
 
 Prototype implementation of the dynamic metadata is based on MySQL
 database. Like static metadata it needs to be shared between all master
-instances and will be served via a single fault-talerant MySQL instance
+instances and will be served via a single fault-tolerant MySQL instance
 which will be shared with static metadata database.
 
 Dynamic metadata will contain the following information:
@@ -1639,7 +1639,7 @@ Dynamic metadata will contain the following information:
 \end{itemize}
 
 The most significant use of the dynamic metadata is to track execution
-of asyncronous queries. When an async query is submitted it is
+of asynchronous queries. When an async query is submitted it is
 registered in dynamic metadata and its ID is returned to the user
 immediately. Later users can request status information for that query
 ID which is obtained from dynamic metadata. When query processing is
@@ -1666,13 +1666,13 @@ allows reducing qms latency---important to avoid delaying query
 execution time. Should a qms failure occur, the in-flight queries for
 which the information was lost will be restarted. Since the
 synchronization to disk-based table will occur relatively frequently
-(eg. at least 1 per minute), the lost time is insignificant. To avoid
+(e.g. at least 1 per minute), the lost time is insignificant. To avoid
 overloading the qms with, only the high-level information available from
 Qserv-master is stored in qms; all worker-based information is cached in
 a scratch space locally to each worker in a simple, raw form (e.g,
 key-value, ASCII file), and can be fetched on demand as needed.
 
-At the moment we use xml-rpc as a message protocol to communicate with
+At the moment we use XML-RPC as a message protocol to communicate with
 qms. It was a natural choice given that this protocol is already in use
 by Qserv master.
 
@@ -1969,7 +1969,7 @@ Management}\label{cluster-and-task-management}
 
 Qserv delegates management of cluster nodes to
 XRootD. The XRootD
-system manages cluster membership, node registration/de-registration,
+system manages cluster membership, node registration/deregistration,
 address lookup, replication, and communication. Its Scalable Service
 Interface (SSI) API provides data-addressed communication
 channels to the rest of Qserv, hiding details like node count, the
@@ -2100,13 +2100,13 @@ providing the full flexibility of running arbitrary code.
 
 Qserv as a service requires a number of components that all need to be
 running, and configured together. On the master node we require mysqld,
-mysql-proxy, XRootD, cmsd, qserv metadata
-service, and the qserv master process. On each of the worker nodes there
+mysql-proxy, XRootD, cmsd, Qserv metadata
+service, and the Qserv master process. On each of the worker nodes there
 will also be the mysqld, cmsd, and XRootD
 service. These major components come from the MySQL,
 XRootD, and Qserv distributions. But to get
 these to work together we will also require many more software package,
-such as protobuf, lua, expat, libevent, python, zope, boost, java,
+such as protobuf, Lua, expat, libevent, python, zope, boost, Java,
 antlr, and so on. And many of these require more recent versions than
 you are provided in most system distributions. We have an installation
 layer, developed by SLAC, and LPC in Clermont-Ferrand, France in
@@ -2187,7 +2187,7 @@ Our current plan chooses the Object table's \texttt{ra\_PS} and
 ForcedSource tables will be partitioned according to the Objects they
 reference.
 
-There is one exception: we allow for pre-computed spatial match tables.
+There is one exception: we allow for precomputed spatial match tables.
 As an example, such a table might provide a many-to-many relationship
 between the LSST Object catalog and a reference catalog from another
 survey, listing all pairs of LSST Objects and reference objects
@@ -2245,7 +2245,7 @@ bypassed.
 
 \subsubsection{Administrative scripts}\label{administrative-scripts}
 
-The administration of the qserv cluster will require a set of scripts,
+The administration of the Qserv cluster will require a set of scripts,
 all run from the one master machine, to control the large set of
 workers. The main admin script, qserv-admin, will supply the base needs,
 with starting all processes needed for the service, in order, and taking
@@ -2269,7 +2269,7 @@ index creation, and then that is done after the data loading. We are
 also experimenting with the use of compressed read-only tables for the
 data serving, and this is an option.
 
-Another needed setup for the data service in qserv, is the creation of
+Another needed setup for the data service in Qserv, is the creation of
 the ``emptyChunks'' list. The data will be spatially partitioned into
 ``chunks'', as previously described, but the for the complete service,
 the master process with need to know how many chunks exist in the data,
@@ -2278,7 +2278,7 @@ a complete table scan, which chunks to create query, or not, will need
 to be known. Once the data is loaded, there is a another script which
 will go out to nodes and see what chunks are there, and compile a list
 of all possible chunks and which chunks do not contain data, or the
-``emptyChunks'' lists. This is loaded by the qserv master process at
+``emptyChunks'' lists. This is loaded by the Qserv master process at
 startup.
 
 \subsection{Result Correctness}\label{result-correctness}
@@ -2286,7 +2286,7 @@ startup.
 To verify Qserv does not introduce any unexpectedly alter results (e.g.,
 does not show the same object twice or does not miss any objects on the
 chunk boundaries), we developed an automated testbed, which allows us to
-run pre-set queries on pre-set data sets both through plain MySQL and
+run preset queries on preset data sets both through plain MySQL and
 through Qserv, and compare results.
 
 \subsection{Current Status and Future
