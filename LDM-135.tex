@@ -1764,16 +1764,23 @@ leveraging its internally used status/error messaging mechanism.
 \subsection{Next-to-database Processing}\label{next-to-database-processing}
 
 We expect some data analyses will be very difficult, or even impossible to
-express through SQL language. This might be particularly useful for time-series
-analysis. For this type of analyses, we will allow users to execute
-their analysis algorithms in a procedural language, such as Python. To do
-that, we will allow users to run their own code on their own hardware
-resources co-located with production database servers. Users then run queries
-on the production database which stream rows directly from database cluster
-nodes to the user processing cluster, where arbitrary code may run without
-endangering the production database. This allows their incurred database I/O
-needs to be satisfied using the database system's shared scanning
-infrastructure while providing the full flexibility of running arbitrary code.
+express through SQL language; e.g. time-series analyses. For these types of
+analyses, we wish to allow users to execute their algorithms in a procedural
+language, such as Python, on hardware resources co-located with the production
+database data.
+
+One approach being investigated is to allow users to run pre-filter queries on
+the production database, with the results streamed to the user processing cluster
+where their custom code may run without directly endangering the production database.
+This would allow incurred database I/O needs to be satisfied using the database
+system's shared scanning infrastructure.
+
+Another approach being investigated would involve keeping one set of replicas of
+the catalog data files external to the database system, in a storage format
+optimized for an off-the-shelf MR processing framework.  This framework would then
+be deployed and run on the user processing cluster independent of the database
+system.  The data replication system would then be responsible for transforming
+files between database and MR framework formats during data ingest and/or recovery.
 
 \subsection{Administration}\label{administration}
 
